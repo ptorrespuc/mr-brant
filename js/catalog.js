@@ -35,8 +35,10 @@ function mainPhoto(p) { const im = prodImages(p); return im[0] ? photoUrl(im[0].
 function imgFitStyle(p) {
   const fit = (p && p.image_fit) || 'cover';
   if (fit === 'contain') return 'background-size:contain;background-position:center;';
-  const pos = (p && p.image_pos != null) ? p.image_pos : 50;
-  return `background-size:cover;background-position:center ${pos}%;`;
+  const posY = (p && p.image_pos != null) ? p.image_pos : 50;
+  const posX = (p && p.image_pos_x != null) ? p.image_pos_x : 50;
+  const zoom = (p && p.image_zoom != null) ? p.image_zoom : 100;
+  return `background-size:${zoom}%;background-position:${posX}% ${posY}%;`;
 }
 function subName(p) { const s = SUBCATEGORIES.find((x) => x.id === p.subcategory_id); return s ? s.name : ''; }
 function catBySlug(slug) { return CATEGORIES.find((c) => c.slug === slug); }

@@ -168,15 +168,19 @@
             <div style="flex:1;min-width:240px;">
               <div class="field">
                 <select id="f_fit">
-                  <option value="cover">Preencher o espaço (recorta)</option>
+                  <option value="cover">Ajustar (zoom e posição)</option>
                   <option value="contain">Mostrar a peça inteira (sem recortar)</option>
                 </select>
               </div>
               <div class="field" id="posWrap">
-                <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;">Posição vertical (topo ↔ base)</label>
+                <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;">Zoom (− afasta · + aproxima)</label>
+                <input id="f_zoom" type="range" min="60" max="300" value="100" style="width:100%;">
+                <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;margin-top:10px;">Posição vertical (topo ↔ base)</label>
                 <input id="f_pos" type="range" min="0" max="100" value="50" style="width:100%;">
+                <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;margin-top:10px;">Posição horizontal (esquerda ↔ direita)</label>
+                <input id="f_posx" type="range" min="0" max="100" value="50" style="width:100%;">
               </div>
-              <p class="muted">"Preencher" deixa a imagem cheia mas pode cortar. "Peça inteira" mostra tudo, com fundo nas bordas. Use a posição para escolher o que aparece quando recorta.</p>
+              <p class="muted">"Ajustar" permite dar zoom e mover a imagem (arrastando com os controles) — pode cortar as bordas. "Peça inteira" mostra a foto completa, com fundo nas bordas.</p>
             </div>
             <div>
               <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;">Pré-visualização</label>
