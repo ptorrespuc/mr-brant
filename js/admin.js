@@ -190,6 +190,11 @@ async function openEditor(p) {
     .map((img) => ({ path: img.path, url: publicUrl(img.path) }));
   renderThumbs();
 
+  // enquadramento
+  $('f_fit').value = p?.image_fit || 'cover';
+  $('f_pos').value = p?.image_pos != null ? p.image_pos : 50;
+  updateFitPreview();
+
   // tamanhos
   $('sizes').innerHTML = '';
   const sizes = (p?.product_sizes || []).slice().sort((a, b) => a.sort - b.sort);
@@ -221,7 +226,27 @@ $('f_photos').onchange = (e) => {
     pendingPhotos.push({ file, url: URL.createObjectURL(file) });
   });
   renderThumbs();
+  updateFitPreview();
 };
+
+// ---------- ENQUADRAMENTO ----------
+function updateFitPreview() {
+  const box = $('fitPreview');
+  const first = pendingPhotos[0];
+  box.style.backgroundImage = first ? `url('${first.url}')` : 'none';
+  const fit = $('f_fit').value;
+  const pos = $('f_pos').value;
+  $('posWrap').style.display = fit === 'cover' ? '' : 'none';
+  if (fit === 'contain') {
+    box.style.backgroundSize = 'contain';
+    box.style.backgroundPosition = 'center';
+  } else {
+    box.style.backgroundSize = 'cover';
+    box.style.backgroundPosition = `center ${pos}%`;
+  }
+}
+$('f_fit').onchange = updateFitPreview;
+$('f_pos').oninput = updateFitPreview;
 function renderThumbs() {
   const c = $('thumbs');
   c.innerHTML = '';
@@ -321,6 +346,8 @@ $('saveBtn').onclick = async () => {
       obs: $('f_obs').value.trim(),
       descriptions, specs,
       active: $('f_active').checked,
+      image_fit: $('f_fit').value,
+      image_pos: parseInt($('f_pos').value, 10) || 0,
     };
 
     // upsert do produto

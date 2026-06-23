@@ -32,6 +32,12 @@ function prodSizes(p) { return (p.product_sizes || []).slice().sort((a, b) => a.
 function prodMinPrice(p) { const s = prodSizes(p); return s.length ? Math.min(...s.map((x) => x.price_cents)) : null; }
 function priceLabel(p) { const m = prodMinPrice(p); return m == null ? 'Sob consulta' : 'a partir de ' + brl(m); }
 function mainPhoto(p) { const im = prodImages(p); return im[0] ? photoUrl(im[0].path) : ''; }
+function imgFitStyle(p) {
+  const fit = (p && p.image_fit) || 'cover';
+  if (fit === 'contain') return 'background-size:contain;background-position:center;';
+  const pos = (p && p.image_pos != null) ? p.image_pos : 50;
+  return `background-size:cover;background-position:center ${pos}%;`;
+}
 function subName(p) { const s = SUBCATEGORIES.find((x) => x.id === p.subcategory_id); return s ? s.name : ''; }
 function catBySlug(slug) { return CATEGORIES.find((c) => c.slug === slug); }
 function imagensSubs() { const cat = catBySlug('imagens'); return cat ? SUBCATEGORIES.filter((s) => s.category_id === cat.id) : []; }
@@ -143,7 +149,7 @@ function renderHome() {
         </div>
         ${featured ? `
         <div style="position:relative;">
-          <div style="position:relative;border-radius:20px;overflow:hidden;height:540px;border:1px solid rgba(205,163,82,.35);box-shadow:0 30px 60px rgba(0,0,0,.55);background:#0d0a05 top/cover no-repeat;background-image:url('${mainPhoto(featured)}');cursor:pointer;" data-prod="${featured.id}">
+          <div style="position:relative;border-radius:20px;overflow:hidden;height:540px;border:1px solid rgba(205,163,82,.35);box-shadow:0 30px 60px rgba(0,0,0,.55);background:#0d0a05 no-repeat;${imgFitStyle(featured)}background-image:url('${mainPhoto(featured)}');cursor:pointer;" data-prod="${featured.id}">
             <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(8,5,2,.85) 0%,rgba(8,5,2,0) 45%);"></div>
             <div style="position:absolute;left:24px;right:24px;bottom:22px;">
               <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#e7cd8e;font-weight:600;">Destaque</div>
@@ -191,7 +197,7 @@ function renderHome() {
           <a href="${waLink('Olá! Quero encomendar uma peça personalizada.')}" target="_blank" rel="noopener" style="padding:12px 22px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;text-decoration:none;font-size:14px;white-space:nowrap;">Encomendar</a>
         </div>
       </div>
-      ${featured ? `<div style="border-radius:20px;overflow:hidden;height:480px;border:1px solid var(--line2);box-shadow:0 24px 50px var(--shadow);background:#0d0a05 top/cover no-repeat;background-image:url('${mainPhoto(featured)}');"></div>` : '<div></div>'}
+      ${featured ? `<div style="border-radius:20px;overflow:hidden;height:480px;border:1px solid var(--line2);box-shadow:0 24px 50px var(--shadow);background:#0d0a05 no-repeat;${imgFitStyle(featured)}background-image:url('${mainPhoto(featured)}');"></div>` : '<div></div>'}
     </section>
 
     <section style="background:var(--bg2);border-top:1px solid var(--line);">
@@ -211,7 +217,7 @@ function renderHome() {
 function cardProd(p) {
   return `
     <div class="card-prod" data-prod="${p.id}">
-      <div class="ph" style="background-image:url('${mainPhoto(p)}')">
+      <div class="ph" style="${imgFitStyle(p)}background-image:url('${mainPhoto(p)}')">
         ${subName(p) ? `<div class="tag">${esc(subName(p))}</div>` : ''}
       </div>
       <div class="bd">
@@ -278,7 +284,7 @@ function renderProduct() {
       <div class="breadcrumb"><span data-nav="home">Início</span> /&nbsp;<span data-nav="imagens">Imagens</span>${subName(p) ? ` /&nbsp;<span class="cur">${esc(subName(p))}</span>` : ''} /&nbsp;<span class="cur">${esc(p.name)}</span></div>
       <div class="prod-cols" style="display:grid;grid-template-columns:1.02fr 1fr;gap:48px;">
         <div>
-          <div style="position:relative;border-radius:18px;overflow:hidden;height:560px;background:#0d0a05 top/cover no-repeat;border:1px solid var(--line);background-image:url('${mainUrl}')"></div>
+          <div style="position:relative;border-radius:18px;overflow:hidden;height:560px;background:#0d0a05 no-repeat;${imgFitStyle(p)}border:1px solid var(--line);background-image:url('${mainUrl}')"></div>
           <div style="display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;">
             ${imgs.map((im, i) => `<div data-g="${i}" style="width:78px;height:78px;border-radius:11px;background:#0d0a05 top/cover no-repeat;border:1px solid ${i === state.gIndex ? 'var(--gold)' : 'var(--line2)'};cursor:pointer;background-image:url('${photoUrl(im.path)}')"></div>`).join('')}
           </div>
@@ -367,7 +373,7 @@ function renderCart() {
           <div style="display:flex;flex-direction:column;gap:14px;">
             ${lines.map((l) => `
               <div style="display:flex;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;">
-                <div style="width:88px;height:100px;border-radius:10px;overflow:hidden;background:#0d0a05 top/cover no-repeat;flex:none;background-image:url('${mainPhoto(l.p)}')"></div>
+                <div style="width:88px;height:100px;border-radius:10px;overflow:hidden;background:#0d0a05 no-repeat;${imgFitStyle(l.p)}flex:none;background-image:url('${mainPhoto(l.p)}')"></div>
                 <div style="flex:1;display:flex;flex-direction:column;">
                   <div style="font-family:Cinzel,serif;font-size:16px;line-height:1.25;">${esc(l.p.name)}</div>
                   <div style="color:var(--muted);font-size:13px;margin-top:3px;">Tamanho: ${esc(l.size.label)}</div>

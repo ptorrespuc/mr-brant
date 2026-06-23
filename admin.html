@@ -161,6 +161,29 @@
         <input id="f_photos" type="file" accept="image/*" multiple>
         <p class="muted" style="margin-top:6px;">Pode selecionar várias. A primeira é a principal.</p>
         <div id="thumbs" class="thumbs"></div>
+
+        <div style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px;">
+          <label>Enquadramento no site</label>
+          <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+            <div style="flex:1;min-width:240px;">
+              <div class="field">
+                <select id="f_fit">
+                  <option value="cover">Preencher o espaço (recorta)</option>
+                  <option value="contain">Mostrar a peça inteira (sem recortar)</option>
+                </select>
+              </div>
+              <div class="field" id="posWrap">
+                <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;">Posição vertical (topo ↔ base)</label>
+                <input id="f_pos" type="range" min="0" max="100" value="50" style="width:100%;">
+              </div>
+              <p class="muted">"Preencher" deixa a imagem cheia mas pode cortar. "Peça inteira" mostra tudo, com fundo nas bordas. Use a posição para escolher o que aparece quando recorta.</p>
+            </div>
+            <div>
+              <label style="color:var(--muted);text-transform:none;letter-spacing:0;font-size:13px;">Pré-visualização</label>
+              <div id="fitPreview" style="width:160px;height:200px;border-radius:10px;border:1px solid var(--line2);background:#0d0a05 center/cover no-repeat;"></div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="card">

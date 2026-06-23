@@ -1,0 +1,10 @@
+-- ============================================================
+-- Mr.Brant — Enquadramento de imagem por produto
+-- Rode no SQL Editor (depois do schema.sql).
+-- ============================================================
+
+-- image_fit: 'cover' (preenche, pode cortar) ou 'contain' (mostra a peça inteira)
+alter table products add column if not exists image_fit text not null default 'cover';
+
+-- image_pos: posição vertical no modo 'cover' (0 = topo, 100 = base)
+alter table products add column if not exists image_pos int not null default 50;
