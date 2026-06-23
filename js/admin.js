@@ -61,6 +61,48 @@ async function enterApp() {
   await loadProducts();
 }
 
+// ---------- CONFIGURAÇÕES ----------
+$('settingsBtn').onclick = openSettings;
+$('settingsBack').onclick = () => { hide($('settingsView')); show($('listView')); };
+
+async function openSettings() {
+  hide($('listView')); hide($('editView')); show($('settingsView'));
+  window.scrollTo(0, 0);
+  // popula select de destaque
+  $('s_hero_featured').innerHTML = '<option value="">— nenhum —</option>' +
+    ALL_PRODUCTS.map((p) => `<option value="${p.id}">${p.name}</option>`).join('');
+  // carrega valores atuais
+  const { data } = await sb.from('settings').select('*');
+  const map = {};
+  (data || []).forEach((r) => { map[r.key] = r.value; });
+  $('s_whatsapp').value = map.whatsapp || '';
+  $('s_hero_eyebrow').value = map.hero_eyebrow || '';
+  $('s_hero_title').value = map.hero_title || '';
+  $('s_hero_subtitle').value = map.hero_subtitle || '';
+  $('s_hero_featured').value = map.hero_featured_id || '';
+}
+
+$('settingsSave').onclick = async () => {
+  show($('loader'));
+  try {
+    const rows = [
+      { key: 'whatsapp',         value: $('s_whatsapp').value.replace(/\D/g, '') },
+      { key: 'hero_eyebrow',     value: $('s_hero_eyebrow').value.trim() },
+      { key: 'hero_title',       value: $('s_hero_title').value.trim() },
+      { key: 'hero_subtitle',    value: $('s_hero_subtitle').value.trim() },
+      { key: 'hero_featured_id', value: $('s_hero_featured').value },
+    ];
+    const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
+    if (error) throw error;
+    hide($('loader'));
+    toast('Configurações salvas!');
+    hide($('settingsView')); show($('listView'));
+  } catch (err) {
+    hide($('loader'));
+    toast('Erro ao salvar: ' + (err.message || err));
+  }
+};
+
 // ---------- REFERÊNCIA (categorias/subcategorias) ----------
 async function loadReference() {
   const [cats, subs] = await Promise.all([

@@ -87,6 +87,7 @@
     <span class="logo">Mr.Brant</span>
     <span class="muted">Admin</span>
     <span class="spacer"></span>
+    <button id="settingsBtn" class="btn">⚙ Configurações</button>
     <button id="newBtn" class="btn gold">+ Nova imagem</button>
     <button id="logoutBtn" class="btn">Sair</button>
   </div>
@@ -97,6 +98,33 @@
       <h2 style="margin-bottom:16px;">Imagens cadastradas</h2>
       <div id="prodList" class="prod-list"></div>
       <p id="emptyMsg" class="muted hidden">Nenhuma imagem ainda. Clique em "+ Nova imagem".</p>
+    </div>
+
+    <!-- CONFIGURAÇÕES -->
+    <div id="settingsView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <button id="settingsBack" class="btn sm">← Voltar</button>
+        <h2>Configurações do site</h2>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">WhatsApp</h3>
+        <div class="field">
+          <label>Número (com DDI e DDD, só dígitos)</label>
+          <input id="s_whatsapp" placeholder="5521975646365">
+          <p class="muted" style="margin-top:6px;">Usado em todos os botões de WhatsApp do site. Ex.: 55 (Brasil) + 21 (DDD) + número.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Seção inicial (Hero)</h3>
+        <div class="field"><label>Linha superior (eyebrow)</label><input id="s_hero_eyebrow" placeholder="Umbanda · Artigos Religiosos"></div>
+        <div class="field"><label>Título</label><textarea id="s_hero_title" placeholder="A força e a beleza dos guias, em cada peça."></textarea></div>
+        <div class="field"><label>Subtítulo</label><textarea id="s_hero_subtitle" placeholder="Imagens sacras pintadas à mão..."></textarea></div>
+        <div class="field"><label>Produto em destaque</label><select id="s_hero_featured"></select></div>
+      </div>
+
+      <button id="settingsSave" class="btn gold" style="width:100%;padding:14px;">Salvar configurações</button>
     </div>
 
     <!-- EDITOR -->

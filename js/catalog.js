@@ -13,6 +13,7 @@ let CATEGORIES = [];
 let SUBCATEGORIES = [];
 let PRODUCTS = [];
 let RELATIONS = []; // { product_id, related_product_id }
+let SETTINGS = {}; // { whatsapp, hero_eyebrow, hero_title, hero_subtitle, hero_featured_id }
 const state = {
   screen: 'home', catSlug: 'imagens', sub: 'Todas', prodId: null,
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
@@ -35,7 +36,8 @@ function subName(p) { const s = SUBCATEGORIES.find((x) => x.id === p.subcategory
 function catBySlug(slug) { return CATEGORIES.find((c) => c.slug === slug); }
 function imagensSubs() { const cat = catBySlug('imagens'); return cat ? SUBCATEGORIES.filter((s) => s.category_id === cat.id) : []; }
 
-function waLink(text) { return 'https://wa.me/' + WHATSAPP + (text ? '?text=' + encodeURIComponent(text) : ''); }
+function waNumber() { return (SETTINGS.whatsapp || WHATSAPP || '').replace(/\D/g, ''); }
+function waLink(text) { return 'https://wa.me/' + waNumber() + (text ? '?text=' + encodeURIComponent(text) : ''); }
 
 function toast(msg) {
   const t = document.createElement('div');
@@ -47,16 +49,19 @@ function toast(msg) {
 
 // ---------- carregar dados ----------
 async function loadData() {
-  const [cats, subs, prods, rels] = await Promise.all([
+  const [cats, subs, prods, rels, sett] = await Promise.all([
     sb.from('categories').select('*').order('sort'),
     sb.from('subcategories').select('*').order('sort'),
     sb.from('products').select('*, product_images(*), product_sizes(*)').eq('active', true).order('sort'),
     sb.from('product_relations').select('*'),
+    sb.from('settings').select('*'),
   ]);
   CATEGORIES = cats.data || [];
   SUBCATEGORIES = subs.data || [];
   PRODUCTS = prods.data || [];
   RELATIONS = rels.data || [];
+  SETTINGS = {};
+  (sett.data || []).forEach((r) => { SETTINGS[r.key] = r.value; });
 }
 
 // ---------- navegação ----------
@@ -112,18 +117,22 @@ function render() {
 
 // ---------- HOME ----------
 function renderHome() {
-  const featured = PRODUCTS.find((p) => prodImages(p).length) || PRODUCTS[0];
+  const featured = (SETTINGS.hero_featured_id && prodById(SETTINGS.hero_featured_id))
+    || PRODUCTS.find((p) => prodImages(p).length) || PRODUCTS[0];
   const homeProds = PRODUCTS.slice(0, 4);
   const subs = imagensSubs();
+  const heroEyebrow = SETTINGS.hero_eyebrow || 'Umbanda · Artigos Religiosos';
+  const heroTitle = SETTINGS.hero_title || 'A força e a beleza dos guias, em cada peça.';
+  const heroSubtitle = SETTINGS.hero_subtitle || 'Imagens sacras pintadas à mão, com a energia e o respeito que a sua fé merece.';
 
   view.innerHTML = `
     <section style="position:relative;background:var(--hero);overflow:hidden;">
       <div style="position:absolute;top:-120px;right:-80px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(205,163,82,.16),transparent 65%);pointer-events:none;"></div>
       <div class="hero" style="max-width:1240px;margin:0 auto;padding:66px 28px 72px;display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center;position:relative;">
         <div>
-          <div class="eyebrow" style="color:#cda352;">Umbanda · Artigos Religiosos</div>
-          <h1 style="font-weight:600;font-size:54px;line-height:1.08;margin:18px 0 0;color:#f4ecdb;">A força e a beleza dos guias, em cada peça.</h1>
-          <p style="color:#b7a98d;font-size:18px;max-width:480px;margin:20px 0 0;">Imagens sacras <strong style="color:#e7cd8e;font-weight:600;">pintadas à mão</strong>, com a energia e o respeito que a sua fé merece.</p>
+          <div class="eyebrow" style="color:#cda352;">${esc(heroEyebrow)}</div>
+          <h1 style="font-weight:600;font-size:54px;line-height:1.08;margin:18px 0 0;color:#f4ecdb;">${esc(heroTitle)}</h1>
+          <p style="color:#b7a98d;font-size:18px;max-width:480px;margin:20px 0 0;">${esc(heroSubtitle)}</p>
           <div style="display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;">
             <button class="btn-gold" data-nav="imagens">Ver as imagens</button>
             <a class="btn-out" href="${waLink('Olá! Vim pelo site da Mr.Brant.')}" target="_blank" rel="noopener">Falar no WhatsApp</a>
@@ -476,8 +485,15 @@ async function init() {
     return;
   }
   fillFooterCats();
+  refreshWaLinks();
   updateCartBadge();
   render();
+}
+
+function refreshWaLinks() {
+  const href = waLink('Olá! Vim pelo site da Mr.Brant.');
+  $('#waTop').href = href;
+  $('#waFooter').href = href;
 }
 
 init();
