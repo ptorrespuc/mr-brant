@@ -80,6 +80,12 @@ async function openSettings() {
   $('s_hero_title').value = map.hero_title || '';
   $('s_hero_subtitle').value = map.hero_subtitle || '';
   $('s_hero_featured').value = map.hero_featured_id || '';
+  $('s_frete_cep').value = map.frete_cep_origem || '';
+  $('s_frete_peso').value = map.frete_peso_padrao || '';
+  $('s_frete_comp').value = map.frete_comp_padrao || '';
+  $('s_frete_larg').value = map.frete_larg_padrao || '';
+  $('s_frete_alt').value = map.frete_alt_padrao || '';
+  $('s_frete_sandbox').checked = (map.frete_sandbox || 'true') === 'true';
 }
 
 $('settingsSave').onclick = async () => {
@@ -91,6 +97,12 @@ $('settingsSave').onclick = async () => {
       { key: 'hero_title',       value: $('s_hero_title').value.trim() },
       { key: 'hero_subtitle',    value: $('s_hero_subtitle').value.trim() },
       { key: 'hero_featured_id', value: $('s_hero_featured').value },
+      { key: 'frete_cep_origem', value: $('s_frete_cep').value.replace(/\D/g, '') },
+      { key: 'frete_peso_padrao', value: $('s_frete_peso').value.trim() },
+      { key: 'frete_comp_padrao', value: $('s_frete_comp').value.trim() },
+      { key: 'frete_larg_padrao', value: $('s_frete_larg').value.trim() },
+      { key: 'frete_alt_padrao', value: $('s_frete_alt').value.trim() },
+      { key: 'frete_sandbox', value: $('s_frete_sandbox').checked ? 'true' : 'false' },
     ];
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
     if (error) throw error;
@@ -200,8 +212,8 @@ async function openEditor(p) {
   // tamanhos
   $('sizes').innerHTML = '';
   const sizes = (p?.product_sizes || []).slice().sort((a, b) => a.sort - b.sort);
-  if (sizes.length) sizes.forEach((s) => addSizeRow(s.label, s.price_cents));
-  else addSizeRow();
+  if (sizes.length) sizes.forEach((s) => addSizeRow(s));
+  else addSizeRow({});
 
   // descrições
   $('descs').innerHTML = '';
@@ -271,14 +283,25 @@ function renderThumbs() {
 }
 
 // ---------- TAMANHOS ----------
-$('addSize').onclick = () => addSizeRow();
-function addSizeRow(label = '', priceCents = '') {
+$('addSize').onclick = () => addSizeRow({});
+function addSizeRow(s = {}) {
+  const v = (x) => (x == null ? '' : x);
   const row = document.createElement('div');
-  row.className = 'size-row';
+  row.style.cssText = 'background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;';
+  row.className = 'size-block';
   row.innerHTML = `
-    <input class="s-label" placeholder="30 cm" value="${label}">
-    <input class="s-price" type="number" step="0.01" placeholder="189,90" value="${priceCents === '' ? '' : (priceCents / 100).toFixed(2)}">
-    <button class="btn sm danger">×</button>`;
+    <div class="size-row">
+      <input class="s-label" placeholder="Tamanho (ex.: 30 cm)" value="${v(s.label)}">
+      <input class="s-price" type="number" step="0.01" placeholder="Preço (189,90)" value="${s.price_cents == null ? '' : (s.price_cents / 100).toFixed(2)}">
+      <button class="btn sm danger" type="button">×</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+      <input class="s-weight" type="number" placeholder="Peso (g)" value="${v(s.weight_g)}" style="flex:1;min-width:90px;">
+      <input class="s-len" type="number" placeholder="Compr. (cm)" value="${v(s.length_cm)}" style="flex:1;min-width:90px;">
+      <input class="s-wid" type="number" placeholder="Larg. (cm)" value="${v(s.width_cm)}" style="flex:1;min-width:90px;">
+      <input class="s-hei" type="number" placeholder="Alt. (cm)" value="${v(s.height_cm)}" style="flex:1;min-width:90px;">
+    </div>
+    <p class="muted" style="margin-top:6px;font-size:12px;">Peso e dimensões são usados no cálculo do frete. Se ficar vazio, usa o padrão das Configurações.</p>`;
   row.querySelector('button').onclick = () => row.remove();
   $('sizes').appendChild(row);
 }
@@ -337,10 +360,15 @@ $('saveBtn').onclick = async () => {
     const specs = Array.from(document.querySelectorAll('#specs .spec-row'))
       .map((r) => ({ k: r.querySelector('.sp-k').value.trim(), v: r.querySelector('.sp-v').value.trim() }))
       .filter((s) => s.k || s.v);
-    const sizes = Array.from(document.querySelectorAll('#sizes .size-row'))
+    const intOrNull = (el) => { const n = parseInt(el.value, 10); return Number.isFinite(n) ? n : null; };
+    const sizes = Array.from(document.querySelectorAll('#sizes .size-block'))
       .map((r, i) => ({
         label: r.querySelector('.s-label').value.trim(),
         price_cents: Math.round(parseFloat(r.querySelector('.s-price').value.replace(',', '.')) * 100) || 0,
+        weight_g: intOrNull(r.querySelector('.s-weight')),
+        length_cm: intOrNull(r.querySelector('.s-len')),
+        width_cm: intOrNull(r.querySelector('.s-wid')),
+        height_cm: intOrNull(r.querySelector('.s-hei')),
         sort: i,
       }))
       .filter((s) => s.label);

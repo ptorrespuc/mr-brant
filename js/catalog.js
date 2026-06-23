@@ -75,6 +75,68 @@ function toast(msg) {
   setTimeout(() => t.remove(), 2600);
 }
 
+// ---------- frete ----------
+function packageFor(size) {
+  const num = (v, def) => (v != null && v !== '' ? Number(v) : Number(def));
+  return {
+    weightKg: num(size && size.weight_g, SETTINGS.frete_peso_padrao || 500) / 1000,
+    length: num(size && size.length_cm, SETTINGS.frete_comp_padrao || 20),
+    width: num(size && size.width_cm, SETTINGS.frete_larg_padrao || 15),
+    height: num(size && size.height_cm, SETTINGS.frete_alt_padrao || 15),
+    insurance: size ? size.price_cents / 100 : 0,
+  };
+}
+
+function freteBoxHtml(idSuffix) {
+  return `
+    <div style="margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;">
+      <div style="font-size:13px;color:var(--text);margin-bottom:11px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7h13v8H3zM16 10h3l2 3v2h-5z"/><circle cx="7" cy="17" r="1.6"/><circle cx="18" cy="17" r="1.6"/></svg>Calcular frete</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <input id="cep_${idSuffix}" placeholder="Digite seu CEP" inputmode="numeric" maxlength="9" style="flex:1;min-width:150px;padding:11px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);color:var(--text);font-size:14px;outline:none;">
+        <button id="cepBtn_${idSuffix}" class="btn-out" style="padding:11px 20px;border-radius:10px;">Calcular</button>
+      </div>
+      <div id="freteRes_${idSuffix}" style="margin-top:12px;"></div>
+    </div>`;
+}
+
+// items = [{ size, qty }]
+async function calcFrete(idSuffix, items) {
+  const res = $(`#freteRes_${idSuffix}`);
+  const from = (SETTINGS.frete_cep_origem || '').replace(/\D/g, '');
+  const to = ($(`#cep_${idSuffix}`).value || '').replace(/\D/g, '');
+  if (to.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">Informe um CEP válido (8 dígitos).</div>`; return; }
+  if (from.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">CEP de origem não configurado no admin.</div>`; return; }
+  res.innerHTML = `<div class="muted" style="font-size:13px;">Calculando…</div>`;
+  try {
+    const products = items.map((it, i) => {
+      const pkg = packageFor(it.size);
+      return { id: String(i + 1), width: pkg.width, height: pkg.height, length: pkg.length, weight: pkg.weightKg, insurance_value: pkg.insurance, quantity: it.qty };
+    });
+    const sandbox = (SETTINGS.frete_sandbox || 'true') === 'true';
+    const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+    const opts = data.options || [];
+    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção de frete encontrada para este CEP.</div>`; return; }
+    res.innerHTML = opts.map((o) => `
+      <div style="display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:14px;">
+        <span style="color:var(--text);">${esc(o.company)} ${esc(o.service)}${o.days ? ` · ${o.days} dia${o.days > 1 ? 's' : ''}` : ''}</span>
+        <span style="color:var(--gold);white-space:nowrap;">${brl(Math.round(o.price * 100))}</span>
+      </div>`).join('') + `<div class="muted" style="font-size:12px;margin-top:8px;">Prazo a partir da postagem. Confirmamos no fechamento pelo WhatsApp.</div>`;
+  } catch (err) {
+    res.innerHTML = `<div style="color:var(--red);font-size:13px;">Não foi possível calcular o frete agora.</div>`;
+    console.error(err);
+  }
+}
+
+function maskCep(el) {
+  el.addEventListener('input', () => {
+    let v = el.value.replace(/\D/g, '').slice(0, 8);
+    if (v.length > 5) v = v.slice(0, 5) + '-' + v.slice(5);
+    el.value = v;
+  });
+}
+
 // ---------- carregar dados ----------
 async function loadData() {
   const [cats, subs, prods, rels, sett] = await Promise.all([
@@ -340,6 +402,7 @@ function renderProduct() {
             Comprar agora pelo WhatsApp
           </a>
           ${p.obs ? `<div style="margin-top:14px;color:var(--muted);font-size:13px;font-style:italic;">${esc(p.obs)}</div>` : ''}
+          ${freteBoxHtml('prod')}
         </div>
       </div>
 
@@ -373,6 +436,12 @@ function renderProduct() {
   };
   $$('[data-size]').forEach((b) => b.onclick = () => { state.selSizeId = b.dataset.size; renderProduct(); });
   $$('[data-g]').forEach((b) => b.onclick = () => { state.gIndex = +b.dataset.g; renderProduct(); });
+  // frete
+  maskCep($('#cep_prod'));
+  $('#cepBtn_prod').onclick = () => {
+    const sz = sizes.find((s) => s.id === state.selSizeId) || sizes[0];
+    calcFrete('prod', [{ size: sz, qty: state.qty }]);
+  };
   bindCards();
 }
 
@@ -414,7 +483,8 @@ function renderCart() {
             <div style="font-family:Cinzel,serif;font-size:19px;margin-bottom:16px;">Resumo do pedido</div>
             <div style="display:flex;justify-content:space-between;font-size:15px;margin-bottom:10px;"><span>Subtotal</span><span style="color:var(--gold);">${brl(cartSubtotal())}</span></div>
             <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:16px;"><span>Frete</span><span>combinado no WhatsApp</span></div>
-            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin-bottom:18px;">Confirmamos o total e o frete pelo WhatsApp ao fechar o pedido.</div>
+            ${freteBoxHtml('cart')}
+            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin:14px 0 18px;">Confirmamos o total e o frete pelo WhatsApp ao fechar o pedido.</div>
             <a id="finalize" style="display:flex;justify-content:center;align-items:center;gap:9px;padding:14px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-size:15px;">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
               Finalizar pelo WhatsApp
@@ -432,6 +502,14 @@ function renderCart() {
     const items = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
     window.open(waLink(orderText(items)), '_blank');
   };
+  const cepBtn = $('#cepBtn_cart');
+  if (cepBtn) {
+    maskCep($('#cep_cart'));
+    cepBtn.onclick = () => {
+      const items = state.cart.map((it) => { const { size } = cartLineInfo(it); return { size, qty: it.qty }; }).filter((x) => x.size);
+      calcFrete('cart', items);
+    };
+  }
   bindCards();
 }
 

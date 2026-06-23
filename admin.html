@@ -124,6 +124,25 @@
         <div class="field"><label>Produto em destaque</label><select id="s_hero_featured"></select></div>
       </div>
 
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Frete (Melhor Envio)</h3>
+        <div class="field">
+          <label>CEP de origem (de onde você envia)</label>
+          <input id="s_frete_cep" placeholder="00000000" inputmode="numeric">
+        </div>
+        <label>Pacote padrão (usado quando o tamanho não tem medidas)</label>
+        <div class="row">
+          <div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">Peso (g)</label><input id="s_frete_peso" type="number" placeholder="500"></div>
+          <div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">Comprimento (cm)</label><input id="s_frete_comp" type="number" placeholder="20"></div>
+          <div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">Largura (cm)</label><input id="s_frete_larg" type="number" placeholder="15"></div>
+          <div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--muted);font-size:12px;">Altura (cm)</label><input id="s_frete_alt" type="number" placeholder="15"></div>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:10px;">
+          <input id="s_frete_sandbox" type="checkbox" style="width:auto;">
+          <label style="margin:0;">Ambiente de teste (sandbox) do Melhor Envio</label>
+        </div>
+      </div>
+
       <button id="settingsSave" class="btn gold" style="width:100%;padding:14px;">Salvar configurações</button>
     </div>
 
