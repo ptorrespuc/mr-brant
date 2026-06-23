@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin — Mr.Brant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#120e08;--bg2:#1a140c;--surface:#1f1810;--surface2:#261d12;
+    --line:rgba(205,163,82,.18);--line2:rgba(205,163,82,.34);
+    --text:#f3ebda;--muted:#a89a80;--gold:#cda352;--gold2:#e7cd8e;
+    --green:#3f9162;--red:#e0717b;--shadow:rgba(0,0,0,.55);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:Jost,sans-serif;font-size:15px;line-height:1.5;min-height:100vh;}
+  a{color:var(--gold2);}
+  h1,h2,h3{font-family:Cinzel,serif;font-weight:600;}
+  .wrap{max-width:1100px;margin:0 auto;padding:24px 20px 80px;}
+  .topbar{display:flex;align-items:center;gap:14px;border-bottom:1px solid var(--line);padding:16px 20px;background:var(--bg2);position:sticky;top:0;z-index:10;}
+  .topbar .logo{font-family:Cinzel,serif;font-size:20px;color:var(--gold);}
+  .topbar .spacer{flex:1;}
+  .btn{padding:10px 18px;border-radius:999px;border:1px solid var(--line2);background:transparent;color:var(--text);cursor:pointer;font-family:Jost,sans-serif;font-size:14px;transition:.15s;}
+  .btn:hover{background:var(--surface);}
+  .btn.gold{background:var(--gold);color:#1a1206;border:none;font-weight:600;}
+  .btn.gold:hover{background:var(--gold2);}
+  .btn.danger{border-color:rgba(224,113,123,.5);color:var(--red);}
+  .btn.danger:hover{background:rgba(224,113,123,.1);}
+  .btn.sm{padding:6px 12px;font-size:13px;}
+  input,select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:10px 12px;font-family:Jost,sans-serif;font-size:14px;}
+  input:focus,select,textarea:focus{outline:none;border-color:var(--gold);}
+  textarea{resize:vertical;min-height:70px;}
+  label{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);margin:0 0 6px;font-weight:600;}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;}
+  .row{display:flex;gap:14px;flex-wrap:wrap;}
+  .row > *{flex:1;min-width:160px;}
+  .field{margin-bottom:16px;}
+  .muted{color:var(--muted);font-size:13px;}
+  .center{min-height:100vh;display:grid;place-items:center;padding:20px;}
+  .login-box{width:100%;max-width:360px;}
+  .hidden{display:none !important;}
+  .prod-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;}
+  .prod-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;transition:.15s;}
+  .prod-item:hover{border-color:var(--line2);}
+  .prod-item .thumb{height:150px;background:#0d0a05 center/cover no-repeat;}
+  .prod-item .body{padding:12px 14px;}
+  .prod-item .name{font-weight:600;}
+  .badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;background:var(--surface2);color:var(--muted);margin-top:4px;}
+  .badge.off{color:var(--red);}
+  .sub-row,.size-row,.spec-row{display:flex;gap:10px;margin-bottom:8px;align-items:center;}
+  .sub-row input,.size-row input,.spec-row input{flex:1;}
+  .thumbs{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;}
+  .thumb-box{position:relative;width:90px;height:90px;border-radius:10px;overflow:hidden;border:1px solid var(--line2);background:#0d0a05 center/cover no-repeat;}
+  .thumb-box button{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:50%;border:none;background:rgba(0,0,0,.7);color:#fff;cursor:pointer;font-size:13px;}
+  .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--line2);padding:12px 22px;border-radius:999px;box-shadow:0 12px 30px var(--shadow);z-index:100;}
+  .rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;}
+  .rel-item{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;cursor:pointer;}
+  .rel-item input{width:auto;}
+  .spinner{border:3px solid var(--line);border-top-color:var(--gold);border-radius:50%;width:28px;height:28px;animation:spin .8s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login" class="center">
+  <div class="login-box card">
+    <h1 style="color:var(--gold);font-size:24px;text-align:center;margin-bottom:6px;">Mr.Brant</h1>
+    <p class="muted" style="text-align:center;margin-bottom:22px;">Painel de administração</p>
+    <div class="field">
+      <label>E-mail</label>
+      <input id="email" type="email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Senha</label>
+      <input id="password" type="password" autocomplete="current-password">
+    </div>
+    <button id="loginBtn" class="btn gold" style="width:100%;">Entrar</button>
+    <p id="loginErr" class="muted hidden" style="color:var(--red);margin-top:12px;text-align:center;"></p>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <span class="logo">Mr.Brant</span>
+    <span class="muted">Admin</span>
+    <span class="spacer"></span>
+    <button id="newBtn" class="btn gold">+ Nova imagem</button>
+    <button id="logoutBtn" class="btn">Sair</button>
+  </div>
+
+  <div class="wrap">
+    <!-- LISTA -->
+    <div id="listView">
+      <h2 style="margin-bottom:16px;">Imagens cadastradas</h2>
+      <div id="prodList" class="prod-list"></div>
+      <p id="emptyMsg" class="muted hidden">Nenhuma imagem ainda. Clique em "+ Nova imagem".</p>
+    </div>
+
+    <!-- EDITOR -->
+    <div id="editView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <button id="backBtn" class="btn sm">← Voltar</button>
+        <h2 id="editTitle">Nova imagem</h2>
+        <span class="spacer" style="flex:1;"></span>
+        <button id="deleteBtn" class="btn danger sm hidden">Excluir</button>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <div class="field"><label>Nome</label><input id="f_name" placeholder="Ex.: Oxum"></div>
+          <div class="field"><label>Slug (URL)</label><input id="f_slug" placeholder="oxum"></div>
+        </div>
+        <div class="field"><label>Tagline (frase curta)</label><input id="f_tagline" placeholder="Orixá do amor e da prosperidade."></div>
+        <div class="row">
+          <div class="field"><label>Categoria</label><select id="f_category"></select></div>
+          <div class="field"><label>Subcategoria</label><select id="f_subcategory"></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Nota (destaque)</label><input id="f_note" placeholder="Personalizamos com as suas cores."></div>
+          <div class="field"><label>Observação</label><input id="f_obs" placeholder="A guia não acompanha o produto."></div>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:10px;">
+          <input id="f_active" type="checkbox" style="width:auto;" checked>
+          <label style="margin:0;">Ativo (aparece no site)</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Fotos</h3>
+        <input id="f_photos" type="file" accept="image/*" multiple>
+        <p class="muted" style="margin-top:6px;">Pode selecionar várias. A primeira é a principal.</p>
+        <div id="thumbs" class="thumbs"></div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Preço por tamanho</h3>
+        <div id="sizes"></div>
+        <button id="addSize" class="btn sm" style="margin-top:6px;">+ Tamanho</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Descrição (parágrafos)</h3>
+        <div id="descs"></div>
+        <button id="addDesc" class="btn sm" style="margin-top:6px;">+ Parágrafo</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Especificações</h3>
+        <div id="specs"></div>
+        <button id="addSpec" class="btn sm" style="margin-top:6px;">+ Especificação</button>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Imagens relacionadas</h3>
+        <div id="relations" class="rel-grid"></div>
+      </div>
+
+      <button id="saveBtn" class="btn gold" style="width:100%;padding:14px;">Salvar imagem</button>
+    </div>
+  </div>
+</div>
+
+<div id="loader" class="center hidden"><div class="spinner"></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
