@@ -286,7 +286,7 @@ function renderProduct() {
       <div class="breadcrumb"><span data-nav="home">Início</span> /&nbsp;<span data-nav="imagens">Imagens</span>${subName(p) ? ` /&nbsp;<span class="cur">${esc(subName(p))}</span>` : ''} /&nbsp;<span class="cur">${esc(p.name)}</span></div>
       <div class="prod-cols" style="display:grid;grid-template-columns:1.02fr 1fr;gap:48px;">
         <div>
-          <div style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;background:#0d0a05 no-repeat;${imgFitStyle(p)}border:1px solid var(--line);background-image:url('${mainUrl}')"></div>
+          <div style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;background:#0d0a05 center/contain no-repeat;border:1px solid var(--line);background-image:url('${mainUrl}')"></div>
           <div style="display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;">
             ${imgs.map((im, i) => `<div data-g="${i}" style="width:78px;height:78px;border-radius:11px;background:#0d0a05 top/cover no-repeat;border:1px solid ${i === state.gIndex ? 'var(--gold)' : 'var(--line2)'};cursor:pointer;background-image:url('${photoUrl(im.path)}')"></div>`).join('')}
           </div>
