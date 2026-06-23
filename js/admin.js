@@ -168,6 +168,7 @@ $('f_name').addEventListener('blur', () => {
 async function openEditor(p) {
   editing = p;
   hide($('listView'));
+  hide($('settingsView'));
   show($('editView'));
   $('editTitle').textContent = p ? 'Editar imagem' : 'Nova imagem';
   $('deleteBtn').classList.toggle('hidden', !p);
