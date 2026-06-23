@@ -47,6 +47,26 @@ function imagensSubs() { const cat = catBySlug('imagens'); return cat ? SUBCATEG
 function waNumber() { return (SETTINGS.whatsapp || WHATSAPP || '').replace(/\D/g, ''); }
 function waLink(text) { return 'https://wa.me/' + waNumber() + (text ? '?text=' + encodeURIComponent(text) : ''); }
 
+// Monta a mensagem de compra padrão. items = [{ p, size, qty }]
+function orderText(items) {
+  let msg = '🛒 *Novo pedido — Mr.Brant*\n\nOlá! Gostaria de comprar:\n';
+  let total = 0;
+  items.forEach(({ p, size, qty }) => {
+    const line = size ? size.price_cents * qty : 0;
+    total += line;
+    msg += `\n• *${p.name}*`;
+    if (subName(p)) msg += `\n   Linha: ${subName(p)}`;
+    if (size) msg += `\n   Tamanho: ${size.label}`;
+    msg += `\n   Qtd: ${qty}`;
+    if (size) msg += ` × ${brl(size.price_cents)} = ${brl(line)}`;
+    if (p.obs) msg += `\n   Obs.: ${p.obs}`;
+  });
+  msg += `\n\n*Subtotal:* ${brl(total)}`;
+  msg += '\n_Frete e prazo a combinar._';
+  msg += '\n\nPode confirmar a disponibilidade, por favor? 🙏';
+  return msg;
+}
+
 function toast(msg) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -349,8 +369,7 @@ function renderProduct() {
   $('#addCart').onclick = addToCart;
   $('#buyNow').onclick = () => {
     const sz = sizes.find((s) => s.id === state.selSizeId) || sizes[0];
-    const txt = `Olá! Tenho interesse na peça *${p.name}*` + (sz ? ` (${sz.label} — ${brl(sz.price_cents)})` : '') + `. Quantidade: ${state.qty}.`;
-    window.open(waLink(txt), '_blank');
+    window.open(waLink(orderText([{ p, size: sz, qty: state.qty }])), '_blank');
   };
   $$('[data-size]').forEach((b) => b.onclick = () => { state.selSizeId = b.dataset.size; renderProduct(); });
   $$('[data-g]').forEach((b) => b.onclick = () => { state.gIndex = +b.dataset.g; renderProduct(); });
@@ -410,10 +429,8 @@ function renderCart() {
   $$('[data-rm]').forEach((b) => b.onclick = () => { state.cart.splice(+b.dataset.rm, 1); saveCart(); renderCart(); updateCartBadge(); });
   const fin = $('#finalize');
   if (fin) fin.onclick = () => {
-    let msg = 'Olá! Quero finalizar este pedido:\n';
-    state.cart.forEach((it) => { const { p, size } = cartLineInfo(it); if (p && size) msg += `\n• ${p.name} — ${size.label} — ${it.qty}x — ${brl(size.price_cents * it.qty)}`; });
-    msg += `\n\nSubtotal: ${brl(cartSubtotal())}`;
-    window.open(waLink(msg), '_blank');
+    const items = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
+    window.open(waLink(orderText(items)), '_blank');
   };
   bindCards();
 }
