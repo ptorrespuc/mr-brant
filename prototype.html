@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#120e08"/><g fill="none" stroke="#cda352" stroke-width="6"><circle cx="100" cy="100" r="46"/></g><text x="100" y="116" font-family="Georgia,serif" font-size="44" font-weight="700" fill="#e7cd8e" text-anchor="middle">MB</text></svg></template>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{background:#120e08;}
+::selection{background:rgba(205,163,82,.32);}
+::-webkit-scrollbar{width:11px;height:11px;}
+::-webkit-scrollbar-thumb{background:rgba(205,163,82,.28);border-radius:6px;}
+input::placeholder{color:var(--muted);}
+@media (max-width:860px){
+  .mb-header-bar{flex-wrap:wrap !important;padding:11px 16px !important;gap:10px 12px !important;}
+  .mb-nav{order:3;width:100%;margin-left:0 !important;overflow-x:auto;}
+  .mb-mega{grid-template-columns:1fr !important;gap:18px !important;padding:20px 18px !important;}
+  .mb-hero{grid-template-columns:1fr !important;gap:30px !important;padding:38px 18px 44px !important;}
+  .mb-h1{font-size:34px !important;}
+  .mb-hero-img{height:400px !important;}
+  .mb-about{grid-template-columns:1fr !important;gap:28px !important;padding:48px 18px !important;}
+  .mb-prod{grid-template-columns:1fr !important;gap:26px !important;}
+  .mb-prod-img{height:420px !important;}
+  .mb-prod2{grid-template-columns:1fr !important;gap:30px !important;margin-top:40px !important;padding-top:34px !important;}
+  .mb-cart{grid-template-columns:1fr !important;gap:24px !important;}
+  .mb-footer{grid-template-columns:1fr 1fr !important;gap:28px !important;}
+  .mb-grid4{grid-template-columns:1fr 1fr !important;gap:14px !important;}
+  .mb-grid6{grid-template-columns:1fr 1fr 1fr !important;}
+  .mb-grid3{grid-template-columns:1fr 1fr !important;gap:14px !important;}
+  .mb-grid-cats{grid-template-columns:1fr 1fr !important;}
+}
+@media (max-width:520px){
+  .mb-h1{font-size:28px !important;}
+  .mb-grid6{grid-template-columns:1fr 1fr !important;}
+  .mb-grid3{grid-template-columns:1fr !important;}
+  .mb-footer{grid-template-columns:1fr !important;}
+  .mb-hero-img{height:340px !important;}
+  .mb-prod-img{height:340px !important;}
+}
+</style>
+</helmet>
+<div id="mb-root" style="--bg:#120e08;--bg2:#1a140c;--surface:#1f1810;--surface2:#261d12;--line:rgba(205,163,82,.18);--line2:rgba(205,163,82,.34);--text:#f3ebda;--muted:#a89a80;--gold:#cda352;--gold2:#e7cd8e;--green:#3f9162;--red:#bf3742;--shadow:rgba(0,0,0,.55);--hero:#0d0a05;min-height:100vh;background:var(--bg);color:var(--text);font-family:Jost,sans-serif;font-size:16px;line-height:1.5;">
+
+  <div style="background:var(--surface2);border-bottom:1px solid var(--line);text-align:center;padding:8px 16px;font-size:12.5px;letter-spacing:.08em;color:var(--muted);">Frete para todo o Brasil via Correios &nbsp;·&nbsp; Pedidos e dúvidas pelo WhatsApp &nbsp;·&nbsp; Personalizamos nas suas cores</div>
+
+  <header style="position:sticky;top:0;z-index:60;background:var(--bg2);border-bottom:1px solid var(--line);">
+    <div class="mb-header-bar" style="max-width:1240px;margin:0 auto;padding:13px 28px;display:flex;align-items:center;gap:22px;">
+      <div onClick="{{ goHome }}" style="display:flex;align-items:center;gap:13px;cursor:pointer;">
+        <div style="width:48px;height:48px;border-radius:13px;background:#f7f1e6;border:1px solid var(--line2);display:grid;place-items:center;box-shadow:0 4px 14px var(--shadow);flex:none;">
+          <img src="assets/logo-mb.png" alt="Mr.Brant" style="width:36px;height:auto;display:block;">
+        </div>
+        <div style="line-height:1.05;">
+          <div style="font-family:Cinzel,serif;font-weight:600;font-size:21px;letter-spacing:.04em;color:var(--text);">Mr.Brant</div>
+          <div style="font-size:10px;letter-spacing:.34em;color:var(--gold);font-weight:500;margin-top:2px;">ARTIGOS RELIGIOSOS</div>
+        </div>
+      </div>
+      <nav class="mb-nav" style="display:flex;gap:2px;margin-left:14px;">
+        <button onClick="{{ goHome }}" style="background:transparent;border:none;color:var(--text);font-family:Jost,sans-serif;font-size:15px;cursor:pointer;padding:8px 12px;border-radius:8px;">Início</button>
+        <button onClick="{{ openImagens }}" style="background:transparent;border:none;color:var(--text);font-family:Jost,sans-serif;font-size:15px;cursor:pointer;padding:8px 12px;border-radius:8px;">Imagens</button>
+        <button onClick="{{ toggleMenu }}" style="background:transparent;border:none;color:var(--text);font-family:Jost,sans-serif;font-size:15px;cursor:pointer;padding:8px 12px;border-radius:8px;">Categorias ▾</button>
+        <button onClick="{{ goContato }}" style="background:transparent;border:none;color:var(--text);font-family:Jost,sans-serif;font-size:15px;cursor:pointer;padding:8px 12px;border-radius:8px;">Contato</button>
+      </nav>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
+        <button onClick="{{ toggleTheme }}" title="Alternar tema" style="width:42px;height:42px;border-radius:11px;background:transparent;border:1px solid var(--line2);color:var(--gold);cursor:pointer;display:grid;place-items:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        </button>
+        <a href="{{ whatsHref }}" target="_blank" style="padding:11px 18px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:14px;text-decoration:none;display:inline-flex;align-items:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
+          WhatsApp
+        </a>
+        <button onClick="{{ goCart }}" style="position:relative;padding:11px 16px;border-radius:999px;background:transparent;border:1px solid var(--line2);color:var(--text);cursor:pointer;font-family:Jost,sans-serif;font-size:14px;display:inline-flex;align-items:center;gap:8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 8h12l-1 12H7L6 8z"/><path d="M9 8a3 3 0 0 1 6 0"/></svg>
+          Sacola
+          <sc-if value="{{ cartCountShow }}"><span style="position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:var(--gold);color:#1a1206;font-size:11px;font-weight:700;display:grid;place-items:center;">{{ cartCount }}</span></sc-if>
+        </button>
+      </div>
+    </div>
+    <sc-if value="{{ menuOpen }}">
+      <div style="background:var(--bg2);border-bottom:1px solid var(--line);box-shadow:0 26px 44px var(--shadow);">
+        <div class="mb-mega" style="max-width:1240px;margin:0 auto;padding:26px 28px;display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:34px;">
+          <div>
+            <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:12px;">Imagens — por guia</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:2px 14px;">
+              <sc-for list="{{ imagensSubs }}" as="s" hint-placeholder-count="12">
+                <button onClick="{{ s.open }}" style="background:transparent;border:none;color:var(--muted);font-family:Jost,sans-serif;font-size:14px;cursor:pointer;text-align:left;padding:7px 8px;border-radius:7px;" style-hover="color:var(--text);background:var(--surface);">{{ s.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:12px;">Linhas</div>
+            <sc-for list="{{ otherCatsA }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.open }}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:transparent;border:none;border-radius:8px;padding:9px 10px;color:var(--text);font-family:Jost,sans-serif;font-size:14px;cursor:pointer;text-align:left;" style-hover="background:var(--surface);"><span>{{ c.name }}</span><span style="font-size:11px;color:var(--muted);">{{ c.tag }}</span></button>
+            </sc-for>
+          </div>
+          <div>
+            <div style="font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:12px;">&nbsp;</div>
+            <sc-for list="{{ otherCatsB }}" as="c" hint-placeholder-count="5">
+              <button onClick="{{ c.open }}" style="display:flex;justify-content:space-between;align-items:center;gap:10px;width:100%;background:transparent;border:none;border-radius:8px;padding:9px 10px;color:var(--text);font-family:Jost,sans-serif;font-size:14px;cursor:pointer;text-align:left;" style-hover="background:var(--surface);"><span>{{ c.name }}</span><span style="font-size:11px;color:var(--muted);">{{ c.tag }}</span></button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </header>
+
+  <!-- ============ HOME ============ -->
+  <sc-if value="{{ showHome }}" hint-placeholder-val="{{ true }}">
+  <div>
+    <section style="position:relative;background:var(--hero);overflow:hidden;">
+      <div style="position:absolute;top:-120px;right:-80px;width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,rgba(205,163,82,.16),transparent 65%);pointer-events:none;"></div>
+      <div class="mb-hero" style="max-width:1240px;margin:0 auto;padding:66px 28px 72px;display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center;position:relative;">
+        <div>
+          <div style="font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:#cda352;font-weight:600;">Umbanda · Artigos Religiosos</div>
+          <h1 class="mb-h1" style="font-family:Cinzel,serif;font-weight:600;font-size:54px;line-height:1.08;margin:18px 0 0;color:#f4ecdb;text-wrap:balance;">A força e a beleza dos guias, em cada peça.</h1>
+          <p style="color:#b7a98d;font-size:18px;max-width:480px;margin:20px 0 0;">Imagens sacras <strong style="color:#e7cd8e;font-weight:600;">pintadas à mão</strong>, com a energia e o respeito que a sua fé merece.</p>
+          <div style="display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;">
+            <button onClick="{{ openImagens }}" style="padding:14px 26px;border-radius:999px;background:var(--gold);color:#1a1206;font-weight:600;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">Ver as imagens</button>
+            <a href="{{ whatsHref }}" target="_blank" style="padding:13px 24px;border-radius:999px;background:transparent;color:#f4ecdb;border:1px solid rgba(205,163,82,.45);cursor:pointer;font-family:Jost,sans-serif;font-size:15px;text-decoration:none;display:inline-flex;align-items:center;">Falar no WhatsApp</a>
+          </div>
+          <div style="display:flex;gap:22px;margin-top:34px;flex-wrap:wrap;color:#8f8470;font-size:13px;letter-spacing:.04em;">
+            <span>Feito à mão</span><span style="color:rgba(205,163,82,.5);">·</span><span>PLA &amp; PETG premium</span><span style="color:rgba(205,163,82,.5);">·</span><span>Frete pra todo o Brasil</span>
+          </div>
+        </div>
+        <div style="position:relative;">
+          <div class="mb-hero-img" style="position:relative;border-radius:20px;overflow:hidden;height:540px;border:1px solid rgba(205,163,82,.35);box-shadow:0 30px 60px rgba(0,0,0,.55);">
+            <div style="{{ heroFeat.bg }}"></div>
+            <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(8,5,2,.85) 0%,rgba(8,5,2,0) 45%);"></div>
+            <div style="position:absolute;left:24px;right:24px;bottom:22px;">
+              <div style="font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#e7cd8e;font-weight:600;">Destaque</div>
+              <div style="font-family:Cinzel,serif;font-size:24px;color:#f4ecdb;margin:6px 0 2px;">Maria Padilha das Almas</div>
+              <div style="display:flex;align-items:center;gap:14px;margin-top:8px;">
+                <span style="color:#cda352;font-size:16px;">a partir de R$ 189,90</span>
+                <button onClick="{{ heroFeat.open }}" style="padding:8px 16px;border-radius:999px;background:#f7f1e6;color:#1a1206;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:13px;font-weight:600;">Ver peça</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div style="background:var(--bg2);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+      <div style="max-width:1240px;margin:0 auto;padding:20px 28px;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:11px;color:var(--text);font-size:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.7"><path d="M20 6 9 17l-5-5"/></svg>Feito e pintado à mão</div>
+        <div style="display:flex;align-items:center;gap:11px;color:var(--text);font-size:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.7"><path d="M20 6 9 17l-5-5"/></svg>PLA &amp; PETG de alta qualidade</div>
+        <div style="display:flex;align-items:center;gap:11px;color:var(--text);font-size:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.7"><path d="M20 6 9 17l-5-5"/></svg>Envio para todo o Brasil</div>
+        <div style="display:flex;align-items:center;gap:11px;color:var(--text);font-size:14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.7"><path d="M20 6 9 17l-5-5"/></svg>Personalizamos nas suas cores</div>
+      </div>
+    </div>
+
+    <section style="max-width:1240px;margin:0 auto;padding:64px 28px 24px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:30px;">
+        <div>
+          <div style="font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;">Imagens em destaque</div>
+          <h2 style="font-family:Cinzel,serif;font-weight:600;font-size:32px;letter-spacing:.03em;color:var(--text);margin:8px 0 0;">Nossas peças</h2>
+        </div>
+        <button onClick="{{ openImagens }}" style="padding:11px 20px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--line2);cursor:pointer;font-family:Jost,sans-serif;font-size:14px;">Ver todas →</button>
+      </div>
+      <div class="mb-grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;">
+        <sc-for list="{{ homeProducts }}" as="item" hint-placeholder-count="4">
+          <div onClick="{{ item.open }}" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .18s,border-color .18s;" style-hover="transform:translateY(-5px);border-color:var(--line2);">
+            <div style="position:relative;height:300px;background:#0d0a05;">
+              <div style="{{ item.bg }}"></div>
+              <div style="position:absolute;top:12px;left:12px;background:rgba(13,10,5,.78);color:#e7cd8e;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid rgba(205,163,82,.4);">{{ item.sub }}</div>
+            </div>
+            <div style="padding:16px 17px 18px;">
+              <div style="font-family:Cinzel,serif;font-size:17px;color:var(--text);line-height:1.25;min-height:42px;">{{ item.name }}</div>
+              <div style="color:var(--gold);font-size:15px;margin-top:8px;">{{ item.priceLabel }}</div>
+              <div style="color:var(--muted);font-size:12.5px;margin-top:3px;">Pintura artesanal</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="background:var(--bg2);margin-top:48px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+      <div style="max-width:1240px;margin:0 auto;padding:56px 28px;">
+        <div style="font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;">Navegue por guia</div>
+        <h2 style="font-family:Cinzel,serif;font-weight:600;font-size:30px;letter-spacing:.03em;color:var(--text);margin:8px 0 26px;">Linhas de trabalho</h2>
+        <div class="mb-grid6" style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;">
+          <sc-for list="{{ imagensSubs }}" as="s" hint-placeholder-count="12">
+            <button onClick="{{ s.open }}" style="background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 12px;color:var(--text);font-family:Cinzel,serif;font-size:14px;letter-spacing:.03em;cursor:pointer;text-align:center;transition:border-color .15s;" style-hover="border-color:var(--gold);">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section class="mb-about" style="max-width:1240px;margin:0 auto;padding:70px 28px;display:grid;grid-template-columns:1fr .9fr;gap:54px;align-items:center;">
+      <div>
+        <div style="font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;">Sobre a Mr.Brant</div>
+        <h2 style="font-family:Cinzel,serif;font-weight:600;font-size:34px;letter-spacing:.02em;color:var(--text);margin:10px 0 16px;">Devoção em cada detalhe</h2>
+        <p style="color:var(--muted);font-size:16.5px;max-width:520px;">Somos dedicados a artigos religiosos de Umbanda. Cada imagem é feita em PLA de alta qualidade e finalizada e pintada à mão — peças únicas, feitas com respeito à fé, aos guias e a quem as recebe.</p>
+        <div style="margin-top:26px;background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:22px 24px;display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <div style="font-family:Cinzel,serif;font-size:19px;color:var(--gold2);">Personalizamos com as suas cores</div>
+            <div style="color:var(--muted);font-size:14px;margin-top:5px;">Encomende a sua peça do jeito do seu guia. Fale com a gente pelo WhatsApp.</div>
+          </div>
+          <a href="{{ whatsHref }}" target="_blank" style="padding:12px 22px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;text-decoration:none;font-family:Jost,sans-serif;font-size:14px;white-space:nowrap;">Encomendar</a>
+        </div>
+      </div>
+      <div style="position:relative;border-radius:20px;overflow:hidden;height:480px;border:1px solid var(--line2);box-shadow:0 24px 50px var(--shadow);">
+        <div style="{{ aboutBg }}"></div>
+      </div>
+    </section>
+
+    <section style="background:var(--bg2);border-top:1px solid var(--line);">
+      <div style="max-width:1240px;margin:0 auto;padding:56px 28px;">
+        <div style="font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);font-weight:600;">Catálogo</div>
+        <h2 style="font-family:Cinzel,serif;font-weight:600;font-size:30px;letter-spacing:.03em;color:var(--text);margin:8px 0 26px;">Todas as categorias</h2>
+        <div class="mb-grid-cats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;">
+          <sc-for list="{{ allCats }}" as="c" hint-placeholder-count="8">
+            <button onClick="{{ c.open }}" style="display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;color:var(--text);cursor:pointer;text-align:left;transition:border-color .15s;" style-hover="border-color:var(--gold);"><span style="font-family:Cinzel,serif;font-size:15px;letter-spacing:.02em;">{{ c.name }}</span><span style="font-size:11px;letter-spacing:.06em;color:var(--muted);text-transform:uppercase;">{{ c.tag }}</span></button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </div>
+  </sc-if>
+
+  <!-- ============ CATEGORY ============ -->
+  <sc-if value="{{ showCat }}">
+  <div style="max-width:1240px;margin:0 auto;padding:38px 28px 70px;min-height:60vh;">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:14px;"><span onClick="{{ goHome }}" style="cursor:pointer;">Início</span> &nbsp;/&nbsp; <span style="color:var(--text);">{{ catName }}</span></div>
+    <h1 style="font-family:Cinzel,serif;font-weight:600;font-size:38px;letter-spacing:.02em;color:var(--text);margin:0 0 22px;">{{ catName }}</h1>
+    <sc-if value="{{ subChipsShow }}">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:30px;">
+        <sc-for list="{{ subChips }}" as="ch" hint-placeholder-count="6">
+          <button onClick="{{ ch.pick }}" style="{{ ch.style }}">{{ ch.label }}</button>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catHasProducts }}">
+      <div class="mb-grid4" style="display:grid;grid-template-columns:repeat(4,1fr);gap:22px;">
+        <sc-for list="{{ catProducts }}" as="item" hint-placeholder-count="3">
+          <div onClick="{{ item.open }}" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .18s,border-color .18s;" style-hover="transform:translateY(-5px);border-color:var(--line2);">
+            <div style="position:relative;height:300px;background:#0d0a05;">
+              <div style="{{ item.bg }}"></div>
+              <div style="position:absolute;top:12px;left:12px;background:rgba(13,10,5,.78);color:#e7cd8e;font-size:11px;letter-spacing:.12em;text-transform:uppercase;padding:5px 11px;border-radius:999px;border:1px solid rgba(205,163,82,.4);">{{ item.sub }}</div>
+            </div>
+            <div style="padding:16px 17px 18px;">
+              <div style="font-family:Cinzel,serif;font-size:17px;color:var(--text);line-height:1.25;min-height:42px;">{{ item.name }}</div>
+              <div style="color:var(--gold);font-size:15px;margin-top:8px;">{{ item.priceLabel }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+    <sc-if value="{{ catEmpty }}">
+      <div style="border:1px dashed var(--line2);border-radius:18px;padding:56px 28px;text-align:center;background:var(--surface);">
+        <div style="font-family:Cinzel,serif;font-size:22px;color:var(--text);">{{ catEmptyMsg }}</div>
+        <p style="color:var(--muted);max-width:440px;margin:12px auto 24px;">Estamos preparando esta linha. Enquanto isso, conheça as nossas Imagens ou fale com a gente.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+          <button onClick="{{ openImagens }}" style="padding:13px 24px;border-radius:999px;background:var(--gold);color:#1a1206;font-weight:600;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">Ver Imagens</button>
+          <a href="{{ whatsHref }}" target="_blank" style="padding:12px 22px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--line2);text-decoration:none;font-family:Jost,sans-serif;font-size:15px;">Falar no WhatsApp</a>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <!-- ============ PRODUCT ============ -->
+  <sc-if value="{{ showProd }}">
+  <div style="max-width:1240px;margin:0 auto;padding:34px 28px 72px;">
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;"><span onClick="{{ goHome }}" style="cursor:pointer;">Início</span> /&nbsp;<span onClick="{{ openImagens }}" style="cursor:pointer;">Imagens</span> /&nbsp;<span onClick="{{ prod.subOpen }}" style="cursor:pointer;">{{ prod.sub }}</span> /&nbsp;<span style="color:var(--text);">{{ prod.name }}</span></div>
+    <div class="mb-prod" style="display:grid;grid-template-columns:1.02fr 1fr;gap:48px;">
+      <div>
+        <div class="mb-prod-img" style="position:relative;border-radius:18px;overflow:hidden;height:560px;background:#0d0a05;border:1px solid var(--line);">
+          <div style="{{ prod.mainBg }}"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;">
+          <sc-for list="{{ gallery }}" as="t" hint-placeholder-count="4">
+            <div onClick="{{ t.pick }}" style="{{ t.style }}"></div>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);font-weight:600;">{{ prod.sub }}</div>
+        <h1 style="font-family:Cinzel,serif;font-weight:600;font-size:34px;line-height:1.15;color:var(--text);margin:10px 0 8px;">{{ prod.name }}</h1>
+        <p style="color:var(--muted);font-size:16px;margin:0 0 20px;">{{ prod.tagline }}</p>
+        <div style="display:flex;align-items:baseline;gap:10px;padding:16px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+          <span style="color:var(--muted);font-size:14px;white-space:nowrap;">a partir de</span>
+          <span style="font-family:Cinzel,serif;font-size:29px;color:var(--gold);white-space:nowrap;">{{ prod.priceLabel }}</span>
+        </div>
+        <div style="margin-top:22px;">
+          <div style="font-size:13px;letter-spacing:.04em;color:var(--text);margin-bottom:10px;">Tamanho</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <sc-for list="{{ sizeOpts }}" as="s" hint-placeholder-count="4">
+              <button onClick="{{ s.pick }}" style="{{ s.style }}">{{ s.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+        <sc-if value="{{ prod.note }}">
+          <div style="margin-top:16px;display:inline-flex;align-items:center;gap:8px;color:var(--gold2);font-size:13.5px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:9px 14px;">{{ prod.note }}</div>
+        </sc-if>
+        <div style="display:flex;gap:12px;align-items:center;margin-top:24px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;border:1px solid var(--line2);border-radius:999px;overflow:hidden;">
+            <button onClick="{{ decQty }}" style="width:42px;height:46px;background:transparent;border:none;color:var(--text);font-size:20px;cursor:pointer;">−</button>
+            <span style="min-width:34px;text-align:center;color:var(--text);font-size:16px;">{{ qty }}</span>
+            <button onClick="{{ incQty }}" style="width:42px;height:46px;background:transparent;border:none;color:var(--text);font-size:20px;cursor:pointer;">+</button>
+          </div>
+          <button onClick="{{ addToCart }}" style="flex:1;min-width:170px;padding:14px 22px;border-radius:999px;background:var(--gold);color:#1a1206;font-weight:600;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">Adicionar à sacola</button>
+        </div>
+        <a onClick="{{ buyNow }}" style="display:flex;justify-content:center;align-items:center;gap:9px;margin-top:12px;padding:14px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
+          Comprar agora pelo WhatsApp
+        </a>
+        <sc-if value="{{ prod.obs }}">
+          <div style="margin-top:14px;color:var(--muted);font-size:13px;font-style:italic;">{{ prod.obs }}</div>
+        </sc-if>
+
+        <div style="margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;">
+          <div style="font-size:13px;letter-spacing:.04em;color:var(--text);margin-bottom:11px;display:flex;align-items:center;gap:8px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="1.6"><path d="M3 7h13v8H3zM16 10h3l2 3v2h-5z"/><circle cx="7" cy="17" r="1.6"/><circle cx="18" cy="17" r="1.6"/></svg>Calcular frete (Correios)</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <input value="{{ cepVal }}" onInput="{{ onCep }}" placeholder="Digite seu CEP" style="flex:1;min-width:150px;padding:11px 14px;border-radius:10px;background:var(--bg);border:1px solid var(--line2);color:var(--text);font-family:Jost,sans-serif;font-size:14px;outline:none;">
+            <button onClick="{{ calcFrete }}" style="padding:11px 20px;border-radius:10px;background:transparent;color:var(--text);border:1px solid var(--line2);cursor:pointer;font-family:Jost,sans-serif;font-size:14px;">Calcular</button>
+          </div>
+          <sc-if value="{{ freteErr }}"><div style="margin-top:12px;color:var(--red);font-size:13px;">Informe um CEP válido com 8 dígitos.</div></sc-if>
+          <sc-if value="{{ freteOk }}">
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;justify-content:space-between;color:var(--text);font-size:14px;"><span>PAC · 5 a 9 dias úteis</span><span style="color:var(--gold);">{{ fretePac }}</span></div>
+              <div style="display:flex;justify-content:space-between;color:var(--text);font-size:14px;"><span>SEDEX · 2 a 4 dias úteis</span><span style="color:var(--gold);">{{ freteSedex }}</span></div>
+              <div style="color:var(--muted);font-size:12px;margin-top:4px;">Valores estimados. O frete final é confirmado no fechamento do pedido pelo WhatsApp.</div>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <div class="mb-prod2" style="display:grid;grid-template-columns:1.3fr 1fr;gap:48px;margin-top:56px;padding-top:44px;border-top:1px solid var(--line);">
+      <div>
+        <h3 style="font-family:Cinzel,serif;font-weight:600;font-size:22px;color:var(--text);margin:0 0 16px;letter-spacing:.02em;">Descrição</h3>
+        <sc-for list="{{ prod.descParas }}" as="p" hint-placeholder-count="3">
+          <p style="color:var(--muted);font-size:16px;margin:0 0 14px;line-height:1.65;">{{ p }}</p>
+        </sc-for>
+      </div>
+      <div>
+        <h3 style="font-family:Cinzel,serif;font-weight:600;font-size:22px;color:var(--text);margin:0 0 16px;letter-spacing:.02em;">Características</h3>
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;">
+          <sc-for list="{{ prod.specs }}" as="sp" hint-placeholder-count="4">
+            <div style="display:flex;justify-content:space-between;gap:16px;padding:13px 18px;border-bottom:1px solid var(--line);">
+              <span style="color:var(--muted);font-size:13.5px;">{{ sp.k }}</span>
+              <span style="color:var(--text);font-size:13.5px;text-align:right;">{{ sp.v }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:56px;">
+      <h3 style="font-family:Cinzel,serif;font-weight:600;font-size:24px;color:var(--text);margin:0 0 22px;letter-spacing:.02em;">Você também pode gostar</h3>
+      <div class="mb-grid3" style="display:grid;grid-template-columns:repeat(3,1fr);gap:22px;">
+        <sc-for list="{{ related }}" as="item" hint-placeholder-count="3">
+          <div onClick="{{ item.open }}" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden;cursor:pointer;transition:transform .18s,border-color .18s;" style-hover="transform:translateY(-5px);border-color:var(--line2);">
+            <div style="position:relative;height:280px;background:#0d0a05;">
+              <div style="{{ item.bg }}"></div>
+            </div>
+            <div style="padding:15px 17px 17px;">
+              <div style="font-family:Cinzel,serif;font-size:16px;color:var(--text);">{{ item.name }}</div>
+              <div style="color:var(--gold);font-size:14px;margin-top:6px;">{{ item.priceLabel }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ CART ============ -->
+  <sc-if value="{{ showCart }}">
+  <div style="max-width:1000px;margin:0 auto;padding:40px 28px 80px;min-height:60vh;">
+    <h1 style="font-family:Cinzel,serif;font-weight:600;font-size:36px;letter-spacing:.02em;color:var(--text);margin:0 0 26px;">Sua sacola</h1>
+    <sc-if value="{{ cartEmpty }}">
+      <div style="border:1px dashed var(--line2);border-radius:18px;padding:60px 28px;text-align:center;background:var(--surface);">
+        <div style="font-family:Cinzel,serif;font-size:22px;color:var(--text);">Sua sacola está vazia</div>
+        <p style="color:var(--muted);margin:12px 0 24px;">Escolha uma imagem para começar o seu pedido.</p>
+        <button onClick="{{ openImagens }}" style="padding:13px 26px;border-radius:999px;background:var(--gold);color:#1a1206;font-weight:600;border:none;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">Ver Imagens</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ cartHas }}">
+      <div class="mb-cart" style="display:grid;grid-template-columns:1.5fr 1fr;gap:32px;align-items:start;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <sc-for list="{{ cartLines }}" as="l" hint-placeholder-count="2">
+            <div style="display:flex;gap:16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;">
+              <div style="position:relative;width:88px;height:100px;border-radius:10px;overflow:hidden;background:#0d0a05;flex:none;"><div style="{{ l.bg }}"></div></div>
+              <div style="flex:1;display:flex;flex-direction:column;">
+                <div style="font-family:Cinzel,serif;font-size:16px;color:var(--text);line-height:1.25;">{{ l.name }}</div>
+                <div style="color:var(--muted);font-size:13px;margin-top:3px;">Tamanho: {{ l.size }}</div>
+                <div style="margin-top:auto;display:flex;align-items:center;gap:14px;">
+                  <div style="display:flex;align-items:center;border:1px solid var(--line2);border-radius:999px;overflow:hidden;">
+                    <button onClick="{{ l.dec }}" style="width:34px;height:36px;background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;">−</button>
+                    <span style="min-width:26px;text-align:center;color:var(--text);font-size:14px;">{{ l.qty }}</span>
+                    <button onClick="{{ l.inc }}" style="width:34px;height:36px;background:transparent;border:none;color:var(--text);font-size:18px;cursor:pointer;">+</button>
+                  </div>
+                  <button onClick="{{ l.remove }}" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-family:Jost,sans-serif;font-size:13px;text-decoration:underline;">Remover</button>
+                </div>
+              </div>
+              <div style="color:var(--gold);font-size:14px;white-space:nowrap;align-self:flex-start;">{{ l.lineLabel }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:22px 24px;">
+          <div style="font-family:Cinzel,serif;font-size:19px;color:var(--text);margin-bottom:16px;">Resumo do pedido</div>
+          <div style="display:flex;justify-content:space-between;color:var(--text);font-size:15px;margin-bottom:10px;"><span>Subtotal (a partir de)</span><span style="color:var(--gold);">{{ subtotalLabel }}</span></div>
+          <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:16px;"><span>Frete</span><span>combinado no WhatsApp</span></div>
+          <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin-bottom:18px;">Os valores são iniciais (variam por tamanho e personalização). Confirmamos o total e o frete pelo WhatsApp ao fechar o pedido.</div>
+          <a onClick="{{ finalizeCart }}" style="display:flex;justify-content:center;align-items:center;gap:9px;padding:14px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-family:Jost,sans-serif;font-size:15px;">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
+            Finalizar pelo WhatsApp
+          </a>
+          <button onClick="{{ openImagens }}" style="width:100%;margin-top:11px;padding:12px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--line2);cursor:pointer;font-family:Jost,sans-serif;font-size:14px;">Continuar comprando</button>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+  </sc-if>
+
+  <footer style="background:#0d0a05;border-top:1px solid rgba(205,163,82,.2);color:#b7a98d;">
+    <div class="mb-footer" style="max-width:1240px;margin:0 auto;padding:54px 28px 28px;display:grid;grid-template-columns:1.4fr 1fr 1fr 1fr;gap:36px;">
+      <div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+          <div style="width:46px;height:46px;border-radius:12px;background:#f7f1e6;display:grid;place-items:center;flex:none;"><img src="assets/logo-mb.png" alt="Mr.Brant" style="width:34px;height:auto;display:block;"></div>
+          <div style="line-height:1.05;"><div style="font-family:Cinzel,serif;font-weight:600;font-size:19px;color:#f4ecdb;letter-spacing:.04em;">Mr.Brant</div><div style="font-size:9.5px;letter-spacing:.32em;color:#cda352;margin-top:2px;">ARTIGOS RELIGIOSOS</div></div>
+        </div>
+        <p style="font-size:14px;max-width:280px;margin:0;">Imagens sacras de Umbanda, feitas em PLA e pintadas à mão. Peças únicas, feitas com devoção.</p>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#cda352;font-weight:600;margin-bottom:14px;">Categorias</div>
+        <sc-for list="{{ allCats }}" as="c" hint-placeholder-count="6">
+          <div onClick="{{ c.open }}" style="font-size:14px;margin-bottom:9px;cursor:pointer;color:#b7a98d;">{{ c.name }}</div>
+        </sc-for>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#cda352;font-weight:600;margin-bottom:14px;">Atendimento</div>
+        <a href="{{ whatsHref }}" target="_blank" style="display:inline-flex;align-items:center;gap:8px;color:#f4ecdb;text-decoration:none;font-size:14px;margin-bottom:10px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2z"/></svg>WhatsApp</a>
+        <div style="font-size:14px;margin-bottom:9px;">Pedidos e dúvidas pelo WhatsApp</div>
+        <div style="font-size:14px;">Seg a Sáb · 9h às 18h</div>
+      </div>
+      <div>
+        <div style="font-size:11px;letter-spacing:.26em;text-transform:uppercase;color:#cda352;font-weight:600;margin-bottom:14px;">Pagamento &amp; Frete</div>
+        <div style="font-size:14px;margin-bottom:9px;">Pedidos finalizados pelo WhatsApp</div>
+        <div style="font-size:14px;margin-bottom:9px;">Envio para todo o Brasil (Correios)</div>
+        <div style="font-size:14px;">Personalizamos nas suas cores</div>
+      </div>
+    </div>
+    <div style="border-top:1px solid rgba(205,163,82,.14);">
+      <div style="max-width:1240px;margin:0 auto;padding:18px 28px;font-size:12.5px;color:#7a7058;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <span>© 2026 Mr.Brant — Artigos Religiosos</span>
+        <span>Feito com devoção · Cada peça é única</span>
+      </div>
+    </div>
+  </footer>
+
+  <sc-if value="{{ toast }}">
+    <div style="position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:90;background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:13px 24px;border-radius:999px;box-shadow:0 12px 30px var(--shadow);font-size:14px;display:flex;align-items:center;gap:10px;">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>{{ toast }}
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(props){
+    super(props);
+    this.rootRef = React.createRef();
+    this.WHATS = '5521975646365';
+    this.themes = {
+      escuro:{'--bg':'#120e08','--bg2':'#1a140c','--surface':'#1f1810','--surface2':'#261d12','--line':'rgba(205,163,82,.18)','--line2':'rgba(205,163,82,.34)','--text':'#f3ebda','--muted':'#a89a80','--gold':'#cda352','--gold2':'#e7cd8e','--green':'#3f9162','--red':'#e0717b','--shadow':'rgba(0,0,0,.55)','--hero':'#0d0a05'},
+      claro:{'--bg':'#f5efe4','--bg2':'#ece2d1','--surface':'#ffffff','--surface2':'#f4ecde','--line':'rgba(28,22,14,.12)','--line2':'rgba(28,22,14,.24)','--text':'#1d160d','--muted':'#6f6450','--gold':'#9c7322','--gold2':'#7d5a16','--green':'#15683a','--red':'#9d1f29','--shadow':'rgba(40,30,15,.16)','--hero':'#0d0a05'}
+    };
+    this.CATS = [
+      {slug:'imagens',name:'Imagens',subs:['Orixás','Caboclos','Pretos Velhos','Crianças','Exus','Pombagiras','Malandros','Marinheiros','Baianos','Boiadeiros','Ciganos','Outros Guias']},
+      {slug:'velas',name:'Velas'},
+      {slug:'guias-colares',name:'Guias e Colares'},
+      {slug:'firmas-ferramentas',name:'Firmas e Ferramentas'},
+      {slug:'incensos',name:'Incensos'},
+      {slug:'defumadores',name:'Defumadores'},
+      {slug:'banhos-ervas',name:'Banhos e Ervas'},
+      {slug:'quartinhas',name:'Quartinhas'},
+      {slug:'pembas',name:'Pembas'},
+      {slug:'kits-orixas',name:'Kits para Orixás'},
+      {slug:'decoracao',name:'Decoração Religiosa'}
+    ];
+    this.PRODUCTS = [
+      {id:'exu-caveira',cat:'imagens',sub:'Exus',name:'Exu Caveira',tagline:'Guardião dos caminhos e dos cemitérios.',price:8990,
+       sizes:['18 cm','20 cm','22 cm','25 cm','30 cm','40 cm','50 cm'],
+       images:['assets/products/exu-caveira/1.jpeg','assets/products/exu-caveira/2.jpeg','assets/products/exu-caveira/3.jpeg','assets/products/exu-caveira/4.jpeg'],
+       note:'',obs:'',
+       desc:['A imagem representa Exu Caveira, guardião dos caminhos e dos cemitérios — símbolo de força, sabedoria e abertura de caminhos espirituais.','Produzida em PLA de alta qualidade e finalizada manualmente. Cada peça é pintada à mão, tornando-se única e exclusiva.','Ideal para quem busca proteção, firmeza e uma peça decorativa de profundo valor simbólico.'],
+       specs:[{k:'Material',v:'PLA ou PETG resistente (uso interno)'},{k:'Resistência',v:'PLA até 60°C · PETG até 80°C'},{k:'Cor',v:'Preto com detalhes em vermelho'},{k:'Acabamento',v:'Brilho e pintura artesanal'}]},
+      {id:'oxum',cat:'imagens',sub:'Orixás',name:'Oxum',tagline:'Orixá do amor, da beleza e da prosperidade.',price:7990,
+       sizes:['18 cm','20 cm','22 cm','25 cm'],
+       images:['assets/products/oxum/1.jpeg','assets/products/oxum/2.jpeg','assets/products/oxum/3.jpeg','assets/products/oxum/4.jpeg'],
+       note:'',obs:'',
+       desc:['Escultura de Oxum em posição serena, segurando seu espelho, com coroa e manto ricamente esculpidos.','Acabamento em dourado e preto brilhante, simbolizando o ouro, a feminilidade e a força espiritual desta poderosa Orixá. Ideal para altares, decoração, coleção ou presente com significado.','Oxum representa o amor, a fertilidade e as águas doces — uma energia de suavidade e poder que traz harmonia e prosperidade ao ambiente.'],
+       specs:[{k:'Material',v:'PLA'},{k:'Acabamento',v:'Pintura dourada com detalhes em preto'},{k:'Base',v:'Firme, pronta para exposição'},{k:'Produção',v:'Artesanal — cada peça é única'}]},
+      {id:'maria-padilha-almas',cat:'imagens',sub:'Pombagiras',name:'Maria Padilha das Almas',tagline:'Elegância, poder e mistério em uma obra única.',price:18990,
+       sizes:['30 cm','40 cm','50 cm','60 cm'],
+       images:['assets/products/maria-padilha-almas/1.jpeg','assets/products/maria-padilha-almas/2.jpeg','assets/products/maria-padilha-almas/3.jpeg','assets/products/maria-padilha-almas/4.jpeg','assets/products/maria-padilha-almas/5.jpeg'],
+       note:'Personalizamos com as suas cores.',obs:'',
+       desc:['Imponente, sedutora e cheia de presença — muito mais que decoração, é uma expressão de força espiritual, beleza e personalidade.','Vestida em traje vermelho com detalhes em preto, taça na mão e postura firme. O acabamento brilhante valoriza cada dobra do vestido e a expressão marcante.','Base reforçada com o nome em alto relevo. Uma peça que transmite respeito, força feminina e magnetismo.'],
+       specs:[{k:'Acabamento',v:'Premium, pintura sofisticada com brilho'},{k:'Base',v:'Reforçada, com nome em alto relevo'},{k:'Personalização',v:'Sob encomenda, nas suas cores'},{k:'Produção',v:'Artesanal, atenção aos detalhes'}]},
+      {id:'pombagira-rainha',cat:'imagens',sub:'Pombagiras',name:'Maria Padilha — Rainha das Sete Encruzilhadas',tagline:'Poder, sedução, proteção e caminhos abertos.',price:21990,
+       sizes:['30 cm','40 cm','50 cm'],
+       images:['assets/products/pombagira-rainha/1.jpeg','assets/products/pombagira-rainha/2.jpeg','assets/products/pombagira-rainha/3.jpeg','assets/products/pombagira-rainha/4.jpeg'],
+       note:'',obs:'A guia em sua mão não acompanha o produto.',
+       desc:['Maria Padilha, Rainha das Sete Encruzilhadas — força, elegância e poder para o seu lar ou espaço espiritual.','Produzida em PLA com preenchimento em gesso, garantindo excelente peso, estabilidade e acabamento superior. Pintura artesanal, cores vivas e brilho realçado.','Vestida em preto e vermelho, com coroa dourada, taça e colar em destaque — símbolo de poder, sedução, proteção e caminhos abertos.'],
+       specs:[{k:'Material',v:'PLA com preenchimento em gesso'},{k:'Acabamento',v:'Pintura manual, brilho realçado'},{k:'Indicado para',v:'Altares, casas, lojas e presentes'},{k:'Tamanho',v:'Conforme variação'}]}
+    ];
+    this.state = {theme:'escuro',screen:'home',catSlug:'imagens',sub:'Todas',prodId:null,gIndex:0,selSize:null,qty:1,menuOpen:false,cart:[],cep:'',frete:null,toast:''};
+  }
+  componentDidMount(){
+    var upd={};
+    try{
+      var t=localStorage.getItem('mrbrant_theme'); if(t&&this.themes[t]) upd.theme=t;
+      var c=localStorage.getItem('mrbrant_cart'); if(c) upd.cart=JSON.parse(c)||[];
+    }catch(e){}
+    this.applyTheme(upd.theme||this.state.theme);
+    if(Object.keys(upd).length) this.setState(upd);
+  }
+  componentDidUpdate(pp,ps){ if(ps && ps.theme!==this.state.theme) this.applyTheme(this.state.theme); }
+  applyTheme(name){
+    var el=document.getElementById('mb-root')||(this.rootRef&&this.rootRef.current); if(!el) return;
+    var v=this.themes[name]||this.themes.escuro;
+    Object.keys(v).forEach(function(k){ el.style.setProperty(k,v[k]); });
+  }
+  toTop(){ try{window.scrollTo({top:0,behavior:'auto'});}catch(e){} }
+  brl(c){ return 'R$ '+(c/100).toFixed(2).replace('.',','); }
+  bgObj(url,pos,size){ return {position:'absolute',inset:0,backgroundImage:"url('"+url+"')",backgroundSize:size||'cover',backgroundPosition:pos||'center',backgroundRepeat:'no-repeat'}; }
+  curProd(){ return this.PRODUCTS.find(function(x){return x.id===this.state.prodId;}.bind(this)); }
+  toggleTheme(){ var t=this.state.theme==='escuro'?'claro':'escuro'; var self=this; this.setState({theme:t},function(){ self.applyTheme(t); }); try{localStorage.setItem('mrbrant_theme',t);}catch(e){} }
+  goHome(){ this.setState({screen:'home',menuOpen:false}); this.toTop(); }
+  goCart(){ this.setState({screen:'cart',menuOpen:false}); this.toTop(); }
+  goContato(){ this.setState({menuOpen:false}); try{window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});}catch(e){} }
+  openCategory(slug){ this.setState({screen:'category',catSlug:slug,sub:'Todas',menuOpen:false}); this.toTop(); }
+  openSub(s){ this.setState({screen:'category',catSlug:'imagens',sub:s,menuOpen:false}); this.toTop(); }
+  openProduct(id){ var p=this.PRODUCTS.find(function(x){return x.id===id;}); if(!p) return; this.setState({screen:'product',prodId:id,gIndex:0,selSize:p.sizes[0],qty:1,frete:null,cep:'',menuOpen:false}); this.toTop(); }
+  persistCart(c){ try{localStorage.setItem('mrbrant_cart',JSON.stringify(c));}catch(e){} }
+  addToCart(){ var p=this.curProd(); if(!p) return; var size=this.state.selSize||p.sizes[0]; var qty=this.state.qty; var cart=this.state.cart.slice(); var i=cart.findIndex(function(it){return it.id===p.id&&it.size===size;}); if(i>=0){cart[i]={id:cart[i].id,size:cart[i].size,qty:cart[i].qty+qty};}else{cart.push({id:p.id,size:size,qty:qty});} this.setState({cart:cart}); this.persistCart(cart); this.showToast('Adicionado à sacola'); }
+  buyNowCurrent(){ var p=this.curProd(); if(!p) return; var size=this.state.selSize; var msg='Olá! Tenho interesse na imagem *'+p.name+'* (tamanho: '+size+'). Pode me passar valores e disponibilidade?'; window.open(this.waHref(msg),'_blank'); }
+  waHref(msg){ return 'https://wa.me/'+this.WHATS+'?text='+encodeURIComponent(msg); }
+  cartInc(i){ var c=this.state.cart.slice(); c[i]={id:c[i].id,size:c[i].size,qty:c[i].qty+1}; this.setState({cart:c}); this.persistCart(c); }
+  cartDec(i){ var c=this.state.cart.slice(); c[i]={id:c[i].id,size:c[i].size,qty:Math.max(1,c[i].qty-1)}; this.setState({cart:c}); this.persistCart(c); }
+  cartRemove(i){ var c=this.state.cart.slice(); c.splice(i,1); this.setState({cart:c}); this.persistCart(c); }
+  finalizeCart(){ var self=this; var lines=this.state.cart.map(function(it){ var p=self.PRODUCTS.find(function(x){return x.id===it.id;}); return '• '+p.name+' — '+it.size+' — '+it.qty+'x'; }).join('\n'); var msg='Olá! Gostaria de fazer um pedido na Mr.Brant:\n'+lines+'\n\nPode confirmar valores e o frete? Obrigado!'; window.open(this.waHref(msg),'_blank'); }
+  onCep(e){ var v=e.target.value.replace(/\D/g,'').slice(0,8); if(v.length>5) v=v.slice(0,5)+'-'+v.slice(5); this.setState({cep:v}); }
+  calcFrete(){ var d=(this.state.cep||'').replace(/\D/g,''); if(d.length<8){ this.setState({frete:{err:true}}); return; } var seed=parseInt(d.slice(0,3),10)||100; var pac=1990+(seed%26)*50; var sedex=pac+1700+(seed%10)*40; this.setState({frete:{ok:true,pac:this.brl(pac),sedex:this.brl(sedex)}}); }
+  showToast(m){ this.setState({toast:m}); clearTimeout(this._t); var self=this; this._t=setTimeout(function(){ self.setState({toast:''}); },2200); }
+  card(p){ var self=this; return {id:p.id,name:p.name,sub:p.sub,bg:this.bgObj(p.images[0],'center 18%'),priceLabel:'a partir de '+this.brl(p.price),open:function(){ self.openProduct(p.id); }}; }
+  renderVals(){
+    var self=this, S=this.state, cur=this.curProd();
+    var chipBase='display:inline-block;padding:9px 16px;border-radius:999px;font-size:13px;font-family:Jost,sans-serif;cursor:pointer;letter-spacing:.02em;white-space:nowrap;';
+    var chipOn=chipBase+'background:var(--gold);color:#1a1206;border:1px solid var(--gold);font-weight:600;';
+    var chipOff=chipBase+'background:transparent;color:var(--muted);border:1px solid var(--line2);';
+    var sizeBase='padding:11px 14px;border-radius:10px;font-size:14px;font-family:Jost,sans-serif;cursor:pointer;min-width:60px;text-align:center;';
+    var sizeOn=sizeBase+'background:var(--text);color:var(--bg);border:1px solid var(--text);font-weight:600;';
+    var sizeOff=sizeBase+'background:transparent;color:var(--text);border:1px solid var(--line2);';
+    var thumbBaseObj={width:'72px',height:'72px',borderRadius:'10px',overflow:'hidden',cursor:'pointer',backgroundColor:'#0d0a05',flex:'none',backgroundSize:'cover',backgroundPosition:'center 15%',backgroundRepeat:'no-repeat'};
+    var thumbObj=function(on,url){ var o=Object.assign({},thumbBaseObj,{backgroundImage:"url('"+url+"')"}); if(on){ o.outline='2px solid var(--gold)'; o.outlineOffset='1px'; o.border='0'; } else { o.border='1px solid var(--line)'; } return o; };
+
+    var cartCount=S.cart.reduce(function(a,it){return a+it.qty;},0);
+    var allCats=this.CATS.map(function(c){ var cnt=self.PRODUCTS.filter(function(p){return p.cat===c.slug;}).length; return {name:c.name,slug:c.slug,tag:cnt>0?(cnt+(cnt>1?' itens':' item')):'Em breve',open:function(){ self.openCategory(c.slug); }}; });
+    var imagensSubs=(this.CATS.find(function(c){return c.slug==='imagens';}).subs||[]).map(function(s){ return {label:s,open:function(){ self.openSub(s); }}; });
+    var otherCats=allCats.filter(function(c){return c.slug!=='imagens';});
+    var homeProducts=this.PRODUCTS.map(function(p){return self.card(p);});
+
+    var catObj=this.CATS.find(function(c){return c.slug===S.catSlug;})||this.CATS[0];
+    var catAll=this.PRODUCTS.filter(function(p){return p.cat===S.catSlug;});
+    var catFiltered=catAll.filter(function(p){return S.sub==='Todas'||p.sub===S.sub;});
+    var catProducts=catFiltered.map(function(p){return self.card(p);});
+    var subChipsShow=S.catSlug==='imagens';
+    var subChips = subChipsShow ? [{label:'Todas',sub:'Todas'}].concat((catObj.subs||[]).map(function(s){return {label:s,sub:s};})).map(function(o){ return {label:o.label,style:(S.sub===o.sub?chipOn:chipOff),pick:function(){ self.setState({sub:o.sub}); }}; }) : [];
+    var catHasProducts=catProducts.length>0;
+    var catEmptyMsg = catAll.length===0 ? 'Esta categoria estará disponível em breve.' : 'Nenhuma peça nesta linha por enquanto.';
+
+    var prod=null,gallery=[],sizeOpts=[],related=[];
+    if(cur){
+      var mainImage=cur.images[S.gIndex]||cur.images[0];
+      gallery=cur.images.map(function(src,i){ return {style:thumbObj(i===S.gIndex,src),pick:function(){ self.setState({gIndex:i}); }}; });
+      sizeOpts=cur.sizes.map(function(s){ return {label:s,style:(s===S.selSize?sizeOn:sizeOff),pick:function(){ self.setState({selSize:s}); }}; });
+      related=this.PRODUCTS.filter(function(p){return p.id!==cur.id;}).slice(0,3).map(function(p){return self.card(p);});
+      prod={id:cur.id,name:cur.name,sub:cur.sub,tagline:cur.tagline,mainBg:this.bgObj(mainImage,'center','contain'),priceLabel:this.brl(cur.price),note:cur.note||'',obs:cur.obs||'',descParas:cur.desc,specs:cur.specs,subOpen:function(){ self.openSub(cur.sub); }};
+    }
+    var fr=S.frete;
+    var cartLines=S.cart.map(function(it,idx){ var p=self.PRODUCTS.find(function(x){return x.id===it.id;}); return {name:p.name,size:it.size,bg:self.bgObj(p.images[0],'center 18%'),qty:it.qty,lineLabel:'a partir de '+self.brl(p.price*it.qty),inc:function(){ self.cartInc(idx); },dec:function(){ self.cartDec(idx); },remove:function(){ self.cartRemove(idx); }}; });
+    var subtotal=S.cart.reduce(function(a,it){ var p=self.PRODUCTS.find(function(x){return x.id===it.id;}); return a+p.price*it.qty; },0);
+
+    return {
+      showHome:S.screen==='home', showCat:S.screen==='category', showProd:S.screen==='product', showCart:S.screen==='cart',
+      goHome:function(){ self.goHome(); }, goContato:function(){ self.goContato(); }, openImagens:function(){ self.openCategory('imagens'); },
+      toggleMenu:function(){ self.setState({menuOpen:!S.menuOpen}); }, menuOpen:S.menuOpen,
+      toggleTheme:function(){ self.toggleTheme(); }, goCart:function(){ self.goCart(); },
+      cartCount:cartCount, cartCountShow:cartCount>0,
+      whatsHref:this.waHref('Olá! Vim pelo site da Mr.Brant e gostaria de mais informações.'),
+      homeProducts:homeProducts, imagensSubs:imagensSubs, allCats:allCats, otherCatsA:otherCats.slice(0,5), otherCatsB:otherCats.slice(5),
+      heroFeat:{bg:this.bgObj(this.PRODUCTS[2].images[0],'center 12%'),open:function(){ self.openProduct('maria-padilha-almas'); }},
+      aboutBg:this.bgObj(this.PRODUCTS[1].images[0],'center 22%'),
+      catName:catObj.name, subChips:subChips, subChipsShow:subChipsShow, catProducts:catProducts, catHasProducts:catHasProducts, catEmpty:!catHasProducts, catEmptyMsg:catEmptyMsg,
+      prod:prod, gallery:gallery, sizeOpts:sizeOpts, qty:S.qty,
+      incQty:function(){ self.setState({qty:Math.min(99,S.qty+1)}); }, decQty:function(){ self.setState({qty:Math.max(1,S.qty-1)}); },
+      addToCart:function(){ self.addToCart(); }, buyNow:function(){ self.buyNowCurrent(); },
+      cepVal:S.cep, onCep:function(e){ self.onCep(e); }, calcFrete:function(){ self.calcFrete(); },
+      freteOk:!!(fr&&fr.ok), freteErr:!!(fr&&fr.err), fretePac:fr&&fr.pac, freteSedex:fr&&fr.sedex,
+      related:related,
+      cartLines:cartLines, cartEmpty:S.cart.length===0, cartHas:S.cart.length>0, subtotalLabel:this.brl(subtotal), finalizeCart:function(){ self.finalizeCart(); },
+      toast:S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
