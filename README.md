@@ -1,6 +1,6 @@
 # Mr.Brant — Artigos Religiosos
 
-Site institucional e catálogo de artigos religiosos de Umbanda (imagens sacras impressas em 3D e pintadas à mão).
+Site institucional e catálogo de artigos religiosos de Umbanda (imagens sacras pintadas à mão).
 
 O site é **um único arquivo** `index.html`, autossuficiente — todas as imagens e estilos já estão embutidos. Basta abrir no navegador. Não precisa de build, servidor ou dependências.
 
