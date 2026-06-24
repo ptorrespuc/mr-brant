@@ -87,6 +87,7 @@
     <span class="logo">Mr.Brant</span>
     <span class="muted">Admin</span>
     <span class="spacer"></span>
+    <button id="ordersBtn" class="btn">📦 Pedidos</button>
     <button id="settingsBtn" class="btn">⚙ Configurações</button>
     <button id="newBtn" class="btn gold">+ Nova imagem</button>
     <button id="logoutBtn" class="btn">Sair</button>
@@ -98,6 +99,25 @@
       <h2 style="margin-bottom:16px;">Imagens cadastradas</h2>
       <div id="prodList" class="prod-list"></div>
       <p id="emptyMsg" class="muted hidden">Nenhuma imagem ainda. Clique em "+ Nova imagem".</p>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div id="ordersView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <button id="ordersBack" class="btn sm">← Voltar</button>
+        <h2>Pedidos</h2>
+      </div>
+      <div id="ordersList"></div>
+      <p id="ordersEmpty" class="muted hidden">Nenhum pedido ainda.</p>
+    </div>
+
+    <!-- DETALHE DO PEDIDO -->
+    <div id="orderView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+        <button id="orderBack" class="btn sm">← Pedidos</button>
+        <h2 id="orderTitle">Pedido</h2>
+      </div>
+      <div id="orderDetail"></div>
     </div>
 
     <!-- CONFIGURAÇÕES -->
@@ -141,6 +161,15 @@
           <input id="s_frete_sandbox" type="checkbox" style="width:auto;">
           <label style="margin:0;">Ambiente de teste (sandbox) do Melhor Envio</label>
         </div>
+      </div>
+
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Pagamento (Mercado Pago)</h3>
+        <div class="field" style="display:flex;align-items:center;gap:10px;">
+          <input id="s_mp_sandbox" type="checkbox" style="width:auto;">
+          <label style="margin:0;">Ambiente de teste (sandbox) do Mercado Pago</label>
+        </div>
+        <p class="muted">Marque enquanto testa com credenciais de teste. Desmarque ao usar as credenciais de produção.</p>
       </div>
 
       <button id="settingsSave" class="btn gold" style="width:100%;padding:14px;">Salvar configurações</button>

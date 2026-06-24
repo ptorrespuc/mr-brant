@@ -61,12 +61,77 @@ async function enterApp() {
   await loadProducts();
 }
 
+// ---------- PEDIDOS ----------
+const ORDER_STATUS = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
+const brl = (c) => 'R$ ' + ((c || 0) / 100).toFixed(2).replace('.', ',');
+function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView'].forEach((v) => hide($(v))); }
+
+$('ordersBtn').onclick = openOrders;
+$('ordersBack').onclick = () => { hide($('ordersView')); show($('listView')); };
+$('orderBack').onclick = () => { hide($('orderView')); openOrders(); };
+
+async function openOrders() {
+  hideAllViews(); show($('ordersView'));
+  window.scrollTo(0, 0);
+  const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false });
+  const list = $('ordersList');
+  if (error) { list.innerHTML = `<p class="muted">Erro ao carregar pedidos. (Rodou o pedidos.sql?)</p>`; return; }
+  if (!data.length) { list.innerHTML = ''; show($('ordersEmpty')); return; }
+  hide($('ordersEmpty'));
+  list.innerHTML = data.map((o) => `
+    <div class="card" data-order="${o.id}" style="cursor:pointer;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:600;">${o.number || '—'} <span class="badge">${o.status}</span></div>
+        <div class="muted" style="font-size:13px;">${o.customer_name || ''} · ${o.customer_email} · ${new Date(o.created_at).toLocaleString('pt-BR')}</div>
+      </div>
+      <div style="color:var(--gold);font-weight:600;">${brl(o.total_cents)}</div>
+    </div>`).join('');
+  list.querySelectorAll('[data-order]').forEach((el) => el.onclick = () => openOrder(el.dataset.order));
+}
+
+async function openOrder(id) {
+  hideAllViews(); show($('orderView'));
+  window.scrollTo(0, 0);
+  const { data: o } = await sb.from('orders').select('*, order_items(*)').eq('id', id).single();
+  $('orderTitle').textContent = `Pedido ${o.number || ''}`;
+  const addr = [o.ship_street, o.ship_number, o.ship_complement, o.ship_district, o.ship_city, o.ship_state, o.ship_cep].filter(Boolean).join(', ');
+  $('orderDetail').innerHTML = `
+    <div class="card">
+      <h3 style="font-size:16px;margin-bottom:10px;">Cliente</h3>
+      <p>${o.customer_name || ''} — ${o.customer_email}${o.customer_phone ? ' — ' + o.customer_phone : ''}</p>
+      <p class="muted" style="margin-top:6px;">${addr || 'Sem endereço'}</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;margin-bottom:10px;">Itens</h3>
+      ${(o.order_items || []).map((i) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);"><span>${i.product_name}${i.size_label ? ' · ' + i.size_label : ''} · ${i.qty}x</span><span style="color:var(--gold);">${brl(i.line_total_cents)}</span></div>`).join('')}
+      <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);"><span>Frete${o.shipping_method ? ' (' + o.shipping_method + ')' : ''}</span><span>${brl(o.shipping_price_cents)}</span></div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:600;"><span>Total</span><span style="color:var(--gold);">${brl(o.total_cents)}</span></div>
+      <p class="muted" style="font-size:12px;margin-top:8px;">Pagamento: ${o.payment_method || '—'} · ID: ${o.payment_id || '—'}</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;margin-bottom:14px;">Gerenciar</h3>
+      <div class="row">
+        <div class="field"><label>Status</label>
+          <select id="o_status">${ORDER_STATUS.map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+        </div>
+        <div class="field"><label>Código de rastreio</label><input id="o_tracking" value="${o.tracking_code || ''}" placeholder="Ex.: AA123456789BR"></div>
+      </div>
+      <button id="o_save" class="btn gold">Salvar</button>
+    </div>`;
+  $('o_save').onclick = async () => {
+    show($('loader'));
+    const { error } = await sb.from('orders').update({ status: $('o_status').value, tracking_code: $('o_tracking').value.trim() || null }).eq('id', id);
+    hide($('loader'));
+    toast(error ? 'Erro ao salvar' : 'Pedido atualizado');
+  };
+}
+
 // ---------- CONFIGURAÇÕES ----------
 $('settingsBtn').onclick = openSettings;
 $('settingsBack').onclick = () => { hide($('settingsView')); show($('listView')); };
 
 async function openSettings() {
-  hide($('listView')); hide($('editView')); show($('settingsView'));
+  hideAllViews(); show($('settingsView'));
   window.scrollTo(0, 0);
   // popula select de destaque
   $('s_hero_featured').innerHTML = '<option value="">— nenhum —</option>' +
@@ -86,6 +151,7 @@ async function openSettings() {
   $('s_frete_larg').value = map.frete_larg_padrao || '';
   $('s_frete_alt').value = map.frete_alt_padrao || '';
   $('s_frete_sandbox').checked = (map.frete_sandbox || 'true') === 'true';
+  $('s_mp_sandbox').checked = (map.mp_sandbox || 'true') === 'true';
 }
 
 $('settingsSave').onclick = async () => {
@@ -103,6 +169,7 @@ $('settingsSave').onclick = async () => {
       { key: 'frete_larg_padrao', value: $('s_frete_larg').value.trim() },
       { key: 'frete_alt_padrao', value: $('s_frete_alt').value.trim() },
       { key: 'frete_sandbox', value: $('s_frete_sandbox').checked ? 'true' : 'false' },
+      { key: 'mp_sandbox', value: $('s_mp_sandbox').checked ? 'true' : 'false' },
     ];
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
     if (error) throw error;
@@ -179,8 +246,7 @@ $('f_name').addEventListener('blur', () => {
 
 async function openEditor(p) {
   editing = p;
-  hide($('listView'));
-  hide($('settingsView'));
+  hideAllViews();
   show($('editView'));
   $('editTitle').textContent = p ? 'Editar imagem' : 'Nova imagem';
   $('deleteBtn').classList.toggle('hidden', !p);

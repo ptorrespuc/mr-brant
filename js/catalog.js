@@ -17,7 +17,10 @@ let SETTINGS = {}; // { whatsapp, hero_eyebrow, hero_title, hero_subtitle, hero_
 const state = {
   screen: 'home', catSlug: 'imagens', sub: 'Todas', prodId: null,
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
+  checkout: loadCheckout(), shipMethod: null, shipCents: null, trackToken: null,
 };
+function loadCheckout() { try { return JSON.parse(localStorage.getItem('mrbrant_checkout')) || {}; } catch (e) { return {}; } }
+function saveCheckout() { try { localStorage.setItem('mrbrant_checkout', JSON.stringify(state.checkout)); } catch (e) {} }
 
 // ---------- util ----------
 function brl(cents) { return 'R$ ' + (cents / 100).toFixed(2).replace('.', ','); }
@@ -203,6 +206,8 @@ function render() {
   if (state.screen === 'category') return renderCategory();
   if (state.screen === 'product') return renderProduct();
   if (state.screen === 'cart') return renderCart();
+  if (state.screen === 'checkout') return renderCheckout();
+  if (state.screen === 'tracking') return renderTracking();
 }
 
 // ---------- HOME ----------
@@ -483,11 +488,11 @@ function renderCart() {
             <div style="font-family:Cinzel,serif;font-size:19px;margin-bottom:16px;">Resumo do pedido</div>
             <div style="display:flex;justify-content:space-between;font-size:15px;margin-bottom:10px;"><span>Subtotal</span><span style="color:var(--gold);">${brl(cartSubtotal())}</span></div>
             <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:16px;"><span>Frete</span><span>combinado no WhatsApp</span></div>
-            ${freteBoxHtml('cart')}
-            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin:14px 0 18px;">Confirmamos o total e o frete pelo WhatsApp ao fechar o pedido.</div>
-            <a id="finalize" style="display:flex;justify-content:center;align-items:center;gap:9px;padding:14px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-size:15px;">
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
-              Finalizar pelo WhatsApp
+            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin:14px 0 18px;">O frete é calculado no checkout. Você confirma tudo antes de pagar.</div>
+            <button id="goCheckout" class="btn-gold" style="width:100%;padding:14px;">Finalizar compra</button>
+            <a id="finalize" style="display:flex;justify-content:center;align-items:center;gap:9px;margin-top:11px;padding:13px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--line2);cursor:pointer;font-size:14px;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
+              Pedir pelo WhatsApp
             </a>
             <button class="btn-out" data-nav="imagens" style="width:100%;margin-top:11px;justify-content:center;">Continuar comprando</button>
           </div>
@@ -502,15 +507,203 @@ function renderCart() {
     const items = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
     window.open(waLink(orderText(items)), '_blank');
   };
-  const cepBtn = $('#cepBtn_cart');
-  if (cepBtn) {
-    maskCep($('#cep_cart'));
-    cepBtn.onclick = () => {
-      const items = state.cart.map((it) => { const { size } = cartLineInfo(it); return { size, qty: it.qty }; }).filter((x) => x.size);
-      calcFrete('cart', items);
-    };
-  }
+  const goCk = $('#goCheckout');
+  if (goCk) goCk.onclick = () => go('checkout');
   bindCards();
+}
+
+// ---------- CHECKOUT ----------
+function field(label, id, val, opts = {}) {
+  return `<div class="field" style="${opts.style || ''}"><label>${label}</label><input id="${id}" value="${esc(val || '')}" placeholder="${opts.ph || ''}" ${opts.attr || ''}></div>`;
+}
+
+function renderCheckout() {
+  if (!state.cart.length) return go('cart');
+  const c = state.checkout || {};
+  const lines = state.cart.map((it) => ({ ...cartLineInfo(it), qty: it.qty })).filter((l) => l.p && l.size);
+
+  view.innerHTML = `
+    <div style="max-width:1040px;margin:0 auto;padding:34px 28px 80px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;">
+        <button class="btn-out" data-nav="cart" style="padding:8px 16px;">← Sacola</button>
+        <h1 style="font-size:30px;">Finalizar compra</h1>
+      </div>
+      <div class="cart-cols" style="display:grid;grid-template-columns:1.4fr 1fr;gap:32px;align-items:start;">
+        <div>
+          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;">
+            <h3 style="font-size:17px;margin-bottom:14px;">Seus dados</h3>
+            ${field('E-mail *', 'ck_email', c.email, { ph: 'voce@email.com', attr: 'type="email"' })}
+            ${field('Nome completo *', 'ck_name', c.name)}
+            ${field('WhatsApp', 'ck_phone', c.phone, { ph: '(21) 90000-0000' })}
+          </div>
+          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;">
+            <h3 style="font-size:17px;margin-bottom:14px;">Endereço de entrega</h3>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              ${field('CEP *', 'ck_cep', c.cep, { ph: '00000-000', attr: 'inputmode="numeric" maxlength="9"', style: 'flex:0 0 150px;' })}
+              <div class="field" style="flex:1;min-width:120px;display:flex;align-items:flex-end;"><button id="ck_buscaCep" class="btn-out" style="padding:11px 18px;">Buscar CEP</button></div>
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              ${field('Rua *', 'ck_street', c.street, { style: 'flex:1;min-width:200px;' })}
+              ${field('Número *', 'ck_number', c.number, { style: 'flex:0 0 110px;' })}
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              ${field('Complemento', 'ck_complement', c.complement, { style: 'flex:1;min-width:140px;' })}
+              ${field('Bairro', 'ck_district', c.district, { style: 'flex:1;min-width:140px;' })}
+            </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              ${field('Cidade', 'ck_city', c.city, { style: 'flex:1;min-width:160px;' })}
+              ${field('UF', 'ck_state', c.state, { style: 'flex:0 0 90px;', attr: 'maxlength="2"' })}
+            </div>
+          </div>
+          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;">
+            <h3 style="font-size:17px;margin-bottom:14px;">Frete</h3>
+            <button id="ck_calcFrete" class="btn-out" style="padding:11px 20px;">Calcular frete</button>
+            <div id="ck_freteOpts" style="margin-top:12px;"></div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:22px;position:sticky;top:90px;">
+            <h3 style="font-size:18px;margin-bottom:14px;">Resumo</h3>
+            <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
+              ${lines.map((l) => `<div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:var(--muted);">${esc(l.p.name)} · ${esc(l.size.label)} · ${l.qty}x</span><span>${brl(l.size.price_cents * l.qty)}</span></div>`).join('')}
+            </div>
+            <div id="ck_summary" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;"></div>
+            <button id="ck_pay" class="btn-gold" style="width:100%;padding:14px;margin-top:16px;">Ir para o pagamento</button>
+            <p class="muted" style="font-size:12px;margin-top:10px;text-align:center;">Pagamento seguro via Mercado Pago — Pix, boleto ou cartão.</p>
+            <div id="ck_err" style="color:var(--red);font-size:13px;margin-top:10px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+
+  ['cep', 'email', 'name', 'phone', 'street', 'number', 'complement', 'district', 'city', 'state'].forEach((k) => {
+    const el = $(`#ck_${k}`);
+    if (el) el.addEventListener('input', () => { state.checkout[k] = el.value; saveCheckout(); });
+  });
+  maskCep($('#ck_cep'));
+  updateCheckoutSummary();
+
+  $('#ck_buscaCep').onclick = buscaCep;
+  $('#ck_calcFrete').onclick = checkoutCalcFrete;
+  $('#ck_pay').onclick = checkoutPay;
+  bindCards();
+}
+
+function updateCheckoutSummary() {
+  const el = $('#ck_summary');
+  if (!el) return;
+  const subtotal = cartSubtotal();
+  const ship = state.shipCents;
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Frete${state.shipMethod ? ' (' + esc(state.shipMethod) + ')' : ''}</span><span>${ship == null ? '—' : brl(ship)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-weight:600;font-size:16px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;"><span>Total</span><span style="color:var(--gold);">${brl(subtotal + (ship || 0))}</span></div>`;
+}
+
+async function buscaCep() {
+  const cep = ($('#ck_cep').value || '').replace(/\D/g, '');
+  if (cep.length !== 8) return;
+  try {
+    const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+    const d = await r.json();
+    if (d.erro) return;
+    const set = (id, v) => { const el = $(`#${id}`); if (el && v) { el.value = v; state.checkout[id.replace('ck_', '')] = v; } };
+    set('ck_street', d.logradouro); set('ck_district', d.bairro); set('ck_city', d.localidade); set('ck_state', d.uf);
+    saveCheckout();
+    $('#ck_number').focus();
+  } catch (e) { /* ignora */ }
+}
+
+async function checkoutCalcFrete() {
+  const res = $('#ck_freteOpts');
+  const from = (SETTINGS.frete_cep_origem || '').replace(/\D/g, '');
+  const to = ($('#ck_cep').value || '').replace(/\D/g, '');
+  if (to.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">Informe um CEP válido.</div>`; return; }
+  if (from.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">CEP de origem não configurado no admin.</div>`; return; }
+  res.innerHTML = `<div class="muted" style="font-size:13px;">Calculando…</div>`;
+  try {
+    const products = state.cart.map((it, i) => {
+      const { size } = cartLineInfo(it); const pkg = packageFor(size);
+      return { id: String(i + 1), width: pkg.width, height: pkg.height, length: pkg.length, weight: pkg.weightKg, insurance_value: pkg.insurance, quantity: it.qty };
+    });
+    const sandbox = (SETTINGS.frete_sandbox || 'true') === 'true';
+    const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
+    if (error) throw error;
+    const opts = (data && data.options) || [];
+    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção encontrada.</div>`; return; }
+    res.innerHTML = opts.map((o, i) => `
+      <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;cursor:pointer;">
+        <input type="radio" name="ckfrete" value="${i}" style="width:auto;">
+        <span style="flex:1;">${esc(o.company)} ${esc(o.service)}${o.days ? ' · ' + o.days + ' dia' + (o.days > 1 ? 's' : '') : ''}</span>
+        <span style="color:var(--gold);">${brl(Math.round(o.price * 100))}</span>
+      </label>`).join('');
+    $$('#ck_freteOpts input[name=ckfrete]').forEach((r, i) => r.onchange = () => {
+      state.shipMethod = `${opts[i].company} ${opts[i].service}`.trim();
+      state.shipCents = Math.round(opts[i].price * 100);
+      updateCheckoutSummary();
+    });
+  } catch (e) {
+    res.innerHTML = `<div style="color:var(--red);font-size:13px;">Não foi possível calcular o frete agora.</div>`;
+  }
+}
+
+async function checkoutPay() {
+  const err = $('#ck_err');
+  const c = state.checkout;
+  const req = { email: 'ck_email', name: 'ck_name', cep: 'ck_cep', street: 'ck_street', number: 'ck_number' };
+  for (const [k, id] of Object.entries(req)) { if (!($(`#${id}`).value || '').trim()) { err.textContent = 'Preencha os campos obrigatórios (*).'; $(`#${id}`).focus(); return; } }
+  if (state.shipCents == null) { err.textContent = 'Calcule e escolha o frete.'; return; }
+  err.textContent = '';
+  const btn = $('#ck_pay'); btn.disabled = true; btn.textContent = 'Processando…';
+  try {
+    const items = state.cart.map((it) => ({ size_id: it.sizeId, qty: it.qty }));
+    const customer = { email: c.email, name: c.name, phone: c.phone };
+    const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
+    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: location.origin } });
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+    const sandbox = (SETTINGS.mp_sandbox || 'true') === 'true';
+    const url = (sandbox && data.sandbox_init_point) ? data.sandbox_init_point : data.init_point;
+    if (!url) throw new Error('Link de pagamento não retornado.');
+    state.cart = []; saveCart(); // esvazia a sacola (pedido criado)
+    window.location.href = url;
+  } catch (e) {
+    err.textContent = 'Erro ao iniciar o pagamento: ' + (e.message || e);
+    btn.disabled = false; btn.textContent = 'Ir para o pagamento';
+  }
+}
+
+// ---------- ACOMPANHAMENTO ----------
+const STATUS_LABEL = { pendente: 'Aguardando pagamento', pago: 'Pago', cancelado: 'Cancelado', enviado: 'Enviado', entregue: 'Entregue' };
+async function renderTracking() {
+  view.innerHTML = `<div style="max-width:680px;margin:0 auto;padding:50px 28px;min-height:60vh;"><div class="muted">Carregando pedido…</div></div>`;
+  try {
+    const { data, error } = await sb.functions.invoke('consultar-pedido', { body: { token: state.trackToken } });
+    if (error) throw error;
+    if (data.error) throw new Error(data.error);
+    const o = data.order;
+    view.innerHTML = `
+      <div style="max-width:680px;margin:0 auto;padding:46px 28px 80px;min-height:60vh;">
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="width:60px;height:60px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;margin:0 auto 14px;border:1px solid var(--line2);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+          </div>
+          <h1 style="font-size:28px;">Pedido ${esc(o.number)}</h1>
+          <p style="color:var(--gold);font-size:16px;margin-top:6px;">${esc(STATUS_LABEL[o.status] || o.status)}</p>
+        </div>
+        <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;">
+          ${(o.order_items || []).map((i) => `<div style="display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);"><span>${esc(i.product_name)}${i.size_label ? ' · ' + esc(i.size_label) : ''} · ${i.qty}x</span><span style="color:var(--gold);">${brl(i.line_total_cents)}</span></div>`).join('')}
+          <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:14px;color:var(--muted);"><span>Frete${o.shipping_method ? ' (' + esc(o.shipping_method) + ')' : ''}</span><span>${brl(o.shipping_price_cents)}</span></div>
+          <div style="display:flex;justify-content:space-between;margin-top:8px;font-weight:600;font-size:16px;"><span>Total</span><span style="color:var(--gold);">${brl(o.total_cents)}</span></div>
+          ${o.tracking_code ? `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line);font-size:14px;">Código de rastreio: <strong>${esc(o.tracking_code)}</strong></div>` : ''}
+        </div>
+        <div style="text-align:center;margin-top:22px;"><button class="btn-out" data-nav="home">Voltar à loja</button></div>
+      </div>`;
+    bindCards();
+  } catch (e) {
+    view.innerHTML = `<div style="max-width:680px;margin:0 auto;padding:50px 28px;min-height:60vh;text-align:center;"><h1 style="font-size:24px;">Pedido não encontrado</h1><p class="muted" style="margin:12px 0 20px;">Verifique o link de acompanhamento.</p><button class="btn-out" data-nav="home">Voltar à loja</button></div>`;
+    bindCards();
+  }
 }
 
 // ---------- binds genéricos ----------
@@ -590,6 +783,9 @@ async function init() {
   fillFooterCats();
   refreshWaLinks();
   updateCartBadge();
+  const params = new URLSearchParams(location.search);
+  const pedido = params.get('pedido');
+  if (pedido) { state.trackToken = pedido; state.screen = 'tracking'; }
   render();
 }
 

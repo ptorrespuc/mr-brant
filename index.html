@@ -85,6 +85,11 @@
 
   .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:90;background:var(--surface2);border:1px solid var(--line2);color:var(--text);padding:13px 24px;border-radius:999px;box-shadow:0 12px 30px var(--shadow);font-size:14px;display:flex;align-items:center;gap:10px;}
   .hidden{display:none !important;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;letter-spacing:.04em;color:var(--gold);margin-bottom:6px;font-weight:600;}
+  input,select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line2);border-radius:10px;color:var(--text);padding:10px 12px;font-family:Jost,sans-serif;font-size:14px;}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--gold);}
+  input[type=radio]{width:auto;}
   .qtybox{display:flex;align-items:center;border:1px solid var(--line2);border-radius:999px;overflow:hidden;}
   .qtybox button{width:42px;height:46px;background:transparent;border:none;color:var(--text);font-size:20px;cursor:pointer;}
   .size-opt{padding:10px 16px;border-radius:10px;border:1px solid var(--line2);background:transparent;color:var(--text);cursor:pointer;font-size:14px;}
