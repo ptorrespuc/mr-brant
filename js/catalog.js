@@ -221,7 +221,7 @@ function renderHome() {
       <div class="hero" style="max-width:1240px;margin:0 auto;padding:66px 28px 72px;display:grid;grid-template-columns:1.05fr .95fr;gap:50px;align-items:center;position:relative;">
         <div>
           <div class="eyebrow" style="color:#cda352;">${esc(heroEyebrow)}</div>
-          <h1 style="font-weight:600;font-size:54px;line-height:1.08;margin:18px 0 0;color:#f4ecdb;">${esc(heroTitle)}</h1>
+          <h1 style="font-weight:600;font-size:clamp(30px,5.2vw,54px);line-height:1.08;margin:18px 0 0;color:#f4ecdb;text-wrap:balance;">${esc(heroTitle)}</h1>
           <p style="color:#b7a98d;font-size:18px;max-width:480px;margin:20px 0 0;">${esc(heroSubtitle)}</p>
           <div style="display:flex;gap:12px;margin-top:30px;flex-wrap:wrap;">
             <button class="btn-gold" data-nav="imagens">Ver as imagens</button>
