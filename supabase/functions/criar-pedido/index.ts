@@ -125,14 +125,14 @@ Deno.serve(async (req) => {
       headers: { 'Authorization': `Bearer ${mpToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify(pref),
     });
-    const pref = await prefResp.json();
-    if (!prefResp.ok) return json({ error: 'Falha no Mercado Pago.', detail: pref }, 502);
+    const prefData = await prefResp.json();
+    if (!prefResp.ok) return json({ error: 'Falha no Mercado Pago.', detail: prefData }, 502);
 
     return json({
       number: order.number,
       token: order.token,
-      init_point: pref.init_point,
-      sandbox_init_point: pref.sandbox_init_point,
+      init_point: prefData.init_point,
+      sandbox_init_point: prefData.sandbox_init_point,
     });
   } catch (err) {
     return json({ error: String((err as any)?.message || err) }, 500);
