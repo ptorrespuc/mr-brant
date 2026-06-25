@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
     }
 
     // mantém só os serviços válidos dos Correios e simplifica
-    const options = (Array.isArray(data) ? data : [])
+    const all = Array.isArray(data) ? data : [];
+    const options = all
       .filter((s) => !s.error && s.price)
       .filter((s) => /correios/i.test(s.company?.name || ''))
       .map((s) => ({
@@ -59,6 +60,14 @@ Deno.serve(async (req) => {
         days: s.delivery_time,
       }))
       .sort((a, b) => a.price - b.price);
+
+    // diagnóstico: quando vazio, devolve os serviços crus para inspeção
+    if (!options.length) {
+      return json({
+        options: [],
+        debug: all.map((s) => ({ name: s.name, company: s.company?.name, price: s.price, error: s.error })),
+      });
+    }
 
     return json({ options });
   } catch (err) {
