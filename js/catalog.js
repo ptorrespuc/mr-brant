@@ -682,7 +682,18 @@ async function checkoutCalcFrete() {
       if (error) throw error;
       opts = (data && data.options) || [];
     }
-    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção de frete para este CEP. Tente novamente.</div>`; return; }
+    if (!opts.length) {
+      res.innerHTML = `
+        <div class="muted" style="font-size:13px;margin-bottom:10px;">Não foi possível calcular o frete agora (serviço dos Correios instável no momento).</div>
+        <button id="ck_freteRetry" class="btn-out" style="padding:9px 16px;margin-bottom:10px;">Tentar de novo</button>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;cursor:pointer;">
+          <input type="radio" name="ckfrete" id="ck_freteCombine" style="width:auto;">
+          <span>Combinar o frete depois (pelo WhatsApp)</span>
+        </label>`;
+      $('#ck_freteRetry').onclick = checkoutCalcFrete;
+      $('#ck_freteCombine').onchange = () => { state.shipMethod = 'A combinar'; state.shipCents = 0; ckUpdate(); };
+      return;
+    }
     res.innerHTML = opts.map((o, i) => `
       <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;cursor:pointer;">
         <input type="radio" name="ckfrete" value="${i}" ${i === 0 ? 'checked' : ''} style="width:auto;">
