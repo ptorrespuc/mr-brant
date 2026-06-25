@@ -595,6 +595,15 @@ function renderCheckout() {
   if (c.street) lockAddrFields();
   ckUpdate();
   bindCards();
+
+  // CEP já preenchido (de uma compra anterior): busca endereço e calcula o frete sozinho
+  if ((c.cep || '').replace(/\D/g, '').length === 8) {
+    (async () => {
+      if (!c.street) await buscaCep();
+      await checkoutCalcFrete();
+      ckUpdate();
+    })();
+  }
 }
 
 function lockAddrFields() {
@@ -665,10 +674,15 @@ async function checkoutCalcFrete() {
       return { id: String(i + 1), width: pkg.width, height: pkg.height, length: pkg.length, weight: pkg.weightKg, insurance_value: pkg.insurance, quantity: it.qty };
     });
     const sandbox = (SETTINGS.frete_sandbox || 'true') === 'true';
-    const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
-    if (error) throw error;
-    const opts = (data && data.options) || [];
-    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção de frete para este CEP.</div>`; return; }
+    // o sandbox do Melhor Envio às vezes responde vazio; tenta até 2 vezes
+    let opts = [];
+    for (let attempt = 0; attempt < 2 && !opts.length; attempt++) {
+      if (attempt) await new Promise((r) => setTimeout(r, 700));
+      const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
+      if (error) throw error;
+      opts = (data && data.options) || [];
+    }
+    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção de frete para este CEP. Tente novamente.</div>`; return; }
     res.innerHTML = opts.map((o, i) => `
       <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;cursor:pointer;">
         <input type="radio" name="ckfrete" value="${i}" ${i === 0 ? 'checked' : ''} style="width:auto;">
