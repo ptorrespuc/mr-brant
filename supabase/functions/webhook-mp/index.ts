@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
       .single();
 
     // e-mail de confirmação só quando aprovado
-    if (order && newStatus === 'pago') await sendEmail(order);
+    if (order && newStatus === 'pago') {
+      const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
+      await sendEmail(order, fromCfg?.value);
+    }
 
     return new Response('ok', { status: 200 });
   } catch (err) {
@@ -56,9 +59,9 @@ Deno.serve(async (req) => {
   }
 });
 
-async function sendEmail(order: any) {
+async function sendEmail(order: any, fromCfg?: string) {
   const key = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
+  const from = fromCfg || Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
   if (!key) return;
 
   const brl = (c: number) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');

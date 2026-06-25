@@ -86,9 +86,11 @@ Deno.serve(async (req) => {
     // Finalização pelo WhatsApp: pedido já gravado, sem pagamento online
     if (payMethod === 'whatsapp') {
       await admin.from('orders').update({ payment_method: 'whatsapp' }).eq('id', order.id);
+      const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
       await sendOrderReceivedEmail({
         to: customer.email, name: customer.name, number: order.number,
         items: orderItems, shippingCents, total, shippingMethod: shipping?.method,
+        from: fromCfg?.value,
       });
       return json({ number: order.number, token: order.token, pay: 'whatsapp' });
     }
@@ -146,7 +148,7 @@ Deno.serve(async (req) => {
 // e-mail "pedido recebido" (combinaremos o pagamento pelo WhatsApp)
 async function sendOrderReceivedEmail(o: any) {
   const key = Deno.env.get('RESEND_API_KEY');
-  const from = Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
+  const from = o.from || Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
   if (!key || !o.to) return;
   const brl = (c: number) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
   const rows = (o.items || []).map((i: any) =>

@@ -93,7 +93,8 @@ create policy "admin update orders"  on orders      for update using (auth.role(
 create policy "admin read items"     on order_items for select using (auth.role() = 'authenticated');
 create policy "admin read customers" on customers   for select using (auth.role() = 'authenticated');
 
--- Configurações do pagamento
+-- Configurações do pagamento e e-mail
 insert into settings (key, value) values
-  ('mp_sandbox', 'true')   -- 'true' = credenciais de teste do Mercado Pago
+  ('mp_sandbox', 'true'),  -- 'true' = credenciais de teste do Mercado Pago
+  ('resend_from', 'Mr.Brant <onboarding@resend.dev>')  -- remetente dos e-mails
 on conflict (key) do nothing;

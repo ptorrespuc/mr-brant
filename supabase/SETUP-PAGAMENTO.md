@@ -37,9 +37,9 @@ Supabase → **Edge Functions → Secrets** (ou Project Settings → Edge Functi
 |---|---|
 | `MP_ACCESS_TOKEN` | Access Token do Mercado Pago (teste agora; produção depois) |
 | `RESEND_API_KEY`  | Chave do Resend (`re_...`) |
-| `RESEND_FROM`     | Ex.: `Mr.Brant <onboarding@resend.dev>` (ou seu domínio) |
 
 > `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` já existem automaticamente — não precisa criar.
+> O **remetente** dos e-mails (`RESEND_FROM`) agora é configurado no **admin → ⚙ Configurações → E-mail (Resend)**, não é mais um segredo.
 
 ## 6. Webhook no Mercado Pago
 A `criar-pedido` já manda a URL de notificação em cada cobrança, então normalmente **não precisa configurar nada**. Se quiser garantir, no painel do Mercado Pago → **Webhooks**, aponte para:

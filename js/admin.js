@@ -152,6 +152,7 @@ async function openSettings() {
   $('s_frete_alt').value = map.frete_alt_padrao || '';
   $('s_frete_sandbox').checked = (map.frete_sandbox || 'true') === 'true';
   $('s_mp_sandbox').checked = (map.mp_sandbox || 'true') === 'true';
+  $('s_resend_from').value = map.resend_from || '';
 }
 
 $('settingsSave').onclick = async () => {
@@ -170,6 +171,7 @@ $('settingsSave').onclick = async () => {
       { key: 'frete_alt_padrao', value: $('s_frete_alt').value.trim() },
       { key: 'frete_sandbox', value: $('s_frete_sandbox').checked ? 'true' : 'false' },
       { key: 'mp_sandbox', value: $('s_mp_sandbox').checked ? 'true' : 'false' },
+      { key: 'resend_from', value: $('s_resend_from').value.trim() },
     ];
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
     if (error) throw error;
