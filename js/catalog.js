@@ -47,6 +47,8 @@ function subName(p) { const s = SUBCATEGORIES.find((x) => x.id === p.subcategory
 function catBySlug(slug) { return CATEGORIES.find((c) => c.slug === slug); }
 function imagensSubs() { const cat = catBySlug('imagens'); return cat ? SUBCATEGORIES.filter((s) => s.category_id === cat.id) : []; }
 
+// URL base do site, incluindo subpasta (ex.: https://user.github.io/mr-brant/)
+function siteBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
 function waNumber() { return (SETTINGS.whatsapp || WHATSAPP || '').replace(/\D/g, ''); }
 function waLink(text) { return 'https://wa.me/' + waNumber() + (text ? '?text=' + encodeURIComponent(text) : ''); }
 
@@ -694,14 +696,14 @@ async function checkoutPay(pay) {
     const items = state.cart.map((it) => ({ size_id: it.sizeId, qty: it.qty }));
     const customer = { email: c.email, name: c.name, phone: c.phone };
     const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
-    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: location.origin, pay } });
+    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
     state.cart = []; saveCart(); updateCartBadge();
 
     if (pay === 'whatsapp') {
-      const link = `${location.origin}/?pedido=${data.token}`;
+      const link = `${siteBase()}?pedido=${data.token}`;
       let msg = `Olá! Fiz o pedido *${data.number}* no site da Mr.Brant.\n`;
       msg += `\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento, por favor? 🙏`;
       window.open(waLink(msg), '_blank');
