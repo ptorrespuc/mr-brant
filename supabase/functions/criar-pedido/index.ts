@@ -86,6 +86,10 @@ Deno.serve(async (req) => {
     // Finalização pelo WhatsApp: pedido já gravado, sem pagamento online
     if (payMethod === 'whatsapp') {
       await admin.from('orders').update({ payment_method: 'whatsapp' }).eq('id', order.id);
+      await sendOrderReceivedEmail({
+        to: customer.email, name: customer.name, number: order.number,
+        items: orderItems, shippingCents, total, shippingMethod: shipping?.method,
+      });
       return json({ number: order.number, token: order.token, pay: 'whatsapp' });
     }
 
@@ -138,3 +142,31 @@ Deno.serve(async (req) => {
     return json({ error: String((err as any)?.message || err) }, 500);
   }
 });
+
+// e-mail "pedido recebido" (combinaremos o pagamento pelo WhatsApp)
+async function sendOrderReceivedEmail(o: any) {
+  const key = Deno.env.get('RESEND_API_KEY');
+  const from = Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
+  if (!key || !o.to) return;
+  const brl = (c: number) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+  const rows = (o.items || []).map((i: any) =>
+    `<tr><td style="padding:6px 0;">${i.product_name}${i.size_label ? ' — ' + i.size_label : ''} (${i.qty}x)</td><td style="text-align:right;">${brl(i.line_total_cents)}</td></tr>`).join('');
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1d160d;">
+      <h2 style="color:#9c7322;">Recebemos o seu pedido — Mr.Brant</h2>
+      <p>Olá ${o.name || ''}, registramos o seu pedido <strong>${o.number}</strong>. 🙏</p>
+      <table style="width:100%;border-collapse:collapse;margin:14px 0;">${rows}
+        <tr><td style="padding-top:8px;">Frete${o.shippingMethod ? ' (' + o.shippingMethod + ')' : ''}</td><td style="text-align:right;padding-top:8px;">${brl(o.shippingCents)}</td></tr>
+        <tr><td style="padding-top:8px;font-weight:bold;">Total</td><td style="text-align:right;padding-top:8px;font-weight:bold;">${brl(o.total)}</td></tr>
+      </table>
+      <p>Vamos combinar o pagamento e a entrega pelo WhatsApp. Até já!</p>
+      <p style="color:#6f6450;font-size:13px;">Mr.Brant — Artigos Religiosos</p>
+    </div>`;
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ from, to: o.to, subject: `Pedido ${o.number} recebido — Mr.Brant`, html }),
+    });
+  } catch (_) { /* não bloqueia o pedido se o e-mail falhar */ }
+}
