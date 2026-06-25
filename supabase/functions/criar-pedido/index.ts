@@ -97,22 +97,26 @@ Deno.serve(async (req) => {
       mpItems.push({ title: `Frete${shipping?.method ? ' — ' + shipping.method : ''}`, quantity: 1, unit_price: shippingCents / 100, currency_id: 'BRL' });
     }
 
+    const isHttps = site.startsWith('https://');
+    const pref: Record<string, unknown> = {
+      items: mpItems,
+      payer: { email: customer.email, name: customer.name || undefined },
+      external_reference: order.id,
+      back_urls: {
+        success: `${site}/?pedido=${order.token}`,
+        pending: `${site}/?pedido=${order.token}`,
+        failure: `${site}/?pedido=${order.token}`,
+      },
+      notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-mp`,
+      metadata: { order_id: order.id },
+    };
+    // auto_return só em HTTPS (o MP rejeita com localhost)
+    if (isHttps) pref.auto_return = 'approved';
+
     const prefResp = await fetch('https://api.mercadopago.com/checkout/preferences', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${mpToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        items: mpItems,
-        payer: { email: customer.email, name: customer.name || undefined },
-        external_reference: order.id,
-        back_urls: {
-          success: `${site}/?pedido=${order.token}`,
-          pending: `${site}/?pedido=${order.token}`,
-          failure: `${site}/?pedido=${order.token}`,
-        },
-        auto_return: 'approved',
-        notification_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/webhook-mp`,
-        metadata: { order_id: order.id },
-      }),
+      body: JSON.stringify(pref),
     });
     const pref = await prefResp.json();
     if (!prefResp.ok) return json({ error: 'Falha no Mercado Pago.', detail: pref }, 502);
