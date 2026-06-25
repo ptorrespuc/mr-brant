@@ -16,10 +16,11 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
-    const { items, customer, shipping, origin } = await req.json();
+    const { items, customer, shipping, origin, pay } = await req.json();
 
     if (!Array.isArray(items) || !items.length) return json({ error: 'Sem itens.' }, 400);
     if (!customer?.email) return json({ error: 'E-mail é obrigatório.' }, 400);
+    const payMethod = pay === 'whatsapp' ? 'whatsapp' : 'mp';
 
     const admin = createClient(
       Deno.env.get('SUPABASE_URL')!,
@@ -81,6 +82,12 @@ Deno.serve(async (req) => {
     if (ordErr) throw ordErr;
 
     await admin.from('order_items').insert(orderItems.map((oi) => ({ ...oi, order_id: order.id })));
+
+    // Finalização pelo WhatsApp: pedido já gravado, sem pagamento online
+    if (payMethod === 'whatsapp') {
+      await admin.from('orders').update({ payment_method: 'whatsapp' }).eq('id', order.id);
+      return json({ number: order.number, token: order.token, pay: 'whatsapp' });
+    }
 
     // cria a preferência no Mercado Pago
     const mpToken = Deno.env.get('MP_ACCESS_TOKEN');

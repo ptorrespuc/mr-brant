@@ -400,12 +400,9 @@ function renderProduct() {
               <span id="qtyVal" style="min-width:34px;text-align:center;font-size:16px;">${state.qty}</span>
               <button id="incQty">+</button>
             </div>
-            <button class="btn-gold" id="addCart" style="flex:1;min-width:170px;">Adicionar à sacola</button>
+            <button class="btn-gold" id="buyNow" style="flex:1;min-width:170px;">Comprar agora</button>
           </div>
-          <a id="buyNow" style="display:flex;justify-content:center;align-items:center;gap:9px;margin-top:12px;padding:14px;border-radius:999px;background:var(--green);color:#fff;font-weight:600;cursor:pointer;font-size:15px;">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
-            Comprar agora pelo WhatsApp
-          </a>
+          <button class="btn-out" id="addCart" style="width:100%;justify-content:center;margin-top:12px;">Adicionar à sacola</button>
           ${p.obs ? `<div style="margin-top:14px;color:var(--muted);font-size:13px;font-style:italic;">${esc(p.obs)}</div>` : ''}
           ${freteBoxHtml('prod')}
         </div>
@@ -435,10 +432,7 @@ function renderProduct() {
   $('#decQty').onclick = () => { state.qty = Math.max(1, state.qty - 1); $('#qtyVal').textContent = state.qty; };
   $('#incQty').onclick = () => { state.qty += 1; $('#qtyVal').textContent = state.qty; };
   $('#addCart').onclick = addToCart;
-  $('#buyNow').onclick = () => {
-    const sz = sizes.find((s) => s.id === state.selSizeId) || sizes[0];
-    window.open(waLink(orderText([{ p, size: sz, qty: state.qty }])), '_blank');
-  };
+  $('#buyNow').onclick = () => { addToCart(); go('checkout'); };
   $$('[data-size]').forEach((b) => b.onclick = () => { state.selSizeId = b.dataset.size; renderProduct(); });
   $$('[data-g]').forEach((b) => b.onclick = () => { state.gIndex = +b.dataset.g; renderProduct(); });
   // frete
@@ -488,12 +482,8 @@ function renderCart() {
             <div style="font-family:Cinzel,serif;font-size:19px;margin-bottom:16px;">Resumo do pedido</div>
             <div style="display:flex;justify-content:space-between;font-size:15px;margin-bottom:10px;"><span>Subtotal</span><span style="color:var(--gold);">${brl(cartSubtotal())}</span></div>
             <div style="display:flex;justify-content:space-between;color:var(--muted);font-size:14px;margin-bottom:16px;"><span>Frete</span><span>combinado no WhatsApp</span></div>
-            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin:14px 0 18px;">O frete é calculado no checkout. Você confirma tudo antes de pagar.</div>
+            <div style="color:var(--muted);font-size:12.5px;border-top:1px solid var(--line);padding-top:14px;margin:14px 0 18px;">No próximo passo você informa a entrega, escolhe o frete e a forma de pagamento (cartão, Pix ou WhatsApp).</div>
             <button id="goCheckout" class="btn-gold" style="width:100%;padding:14px;">Finalizar compra</button>
-            <a id="finalize" style="display:flex;justify-content:center;align-items:center;gap:9px;margin-top:11px;padding:13px;border-radius:999px;background:transparent;color:var(--text);border:1px solid var(--line2);cursor:pointer;font-size:14px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-2.8.9.9-2.7-.2-.3A8 8 0 1 1 12 20z"/></svg>
-              Pedir pelo WhatsApp
-            </a>
             <button class="btn-out" data-nav="imagens" style="width:100%;margin-top:11px;justify-content:center;">Continuar comprando</button>
           </div>
         </div>`}
@@ -502,11 +492,6 @@ function renderCart() {
   $$('[data-dec]').forEach((b) => b.onclick = () => { const i = +b.dataset.dec; state.cart[i].qty = Math.max(1, state.cart[i].qty - 1); saveCart(); renderCart(); updateCartBadge(); });
   $$('[data-inc]').forEach((b) => b.onclick = () => { const i = +b.dataset.inc; state.cart[i].qty += 1; saveCart(); renderCart(); updateCartBadge(); });
   $$('[data-rm]').forEach((b) => b.onclick = () => { state.cart.splice(+b.dataset.rm, 1); saveCart(); renderCart(); updateCartBadge(); });
-  const fin = $('#finalize');
-  if (fin) fin.onclick = () => {
-    const items = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
-    window.open(waLink(orderText(items)), '_blank');
-  };
   const goCk = $('#goCheckout');
   if (goCk) goCk.onclick = () => go('checkout');
   bindCards();
@@ -516,11 +501,15 @@ function renderCart() {
 function field(label, id, val, opts = {}) {
   return `<div class="field" style="${opts.style || ''}"><label>${label}</label><input id="${id}" value="${esc(val || '')}" placeholder="${opts.ph || ''}" ${opts.attr || ''}></div>`;
 }
+function stepHead(n, title) {
+  return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;"><span style="width:26px;height:26px;border-radius:50%;background:var(--gold);color:#1a1206;font-weight:700;display:grid;place-items:center;font-size:14px;">${n}</span><h3 style="font-size:17px;">${title}</h3></div>`;
+}
 
 function renderCheckout() {
   if (!state.cart.length) return go('cart');
   const c = state.checkout || {};
   const lines = state.cart.map((it) => ({ ...cartLineInfo(it), qty: it.qty })).filter((l) => l.p && l.size);
+  const cardCss = 'background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;';
 
   view.innerHTML = `
     <div style="max-width:1040px;margin:0 auto;padding:34px 28px 80px;">
@@ -530,35 +519,34 @@ function renderCheckout() {
       </div>
       <div class="cart-cols" style="display:grid;grid-template-columns:1.4fr 1fr;gap:32px;align-items:start;">
         <div>
-          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;">
-            <h3 style="font-size:17px;margin-bottom:14px;">Seus dados</h3>
+          <div class="card" style="${cardCss}">
+            ${stepHead(1, 'Seus dados')}
             ${field('E-mail *', 'ck_email', c.email, { ph: 'voce@email.com', attr: 'type="email"' })}
             ${field('Nome completo *', 'ck_name', c.name)}
             ${field('WhatsApp', 'ck_phone', c.phone, { ph: '(21) 90000-0000' })}
           </div>
-          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px;">
-            <h3 style="font-size:17px;margin-bottom:14px;">Endereço de entrega</h3>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              ${field('CEP *', 'ck_cep', c.cep, { ph: '00000-000', attr: 'inputmode="numeric" maxlength="9"', style: 'flex:0 0 150px;' })}
-              <div class="field" style="flex:1;min-width:120px;display:flex;align-items:flex-end;"><button id="ck_buscaCep" class="btn-out" style="padding:11px 18px;">Buscar CEP</button></div>
+          <div class="card" style="${cardCss}">
+            ${stepHead(2, 'Endereço de entrega')}
+            ${field('CEP *', 'ck_cep', c.cep, { ph: 'Digite o CEP', attr: 'inputmode="numeric" maxlength="9"', style: 'max-width:200px;' })}
+            <div id="ck_addr" style="display:${c.street ? 'block' : 'none'};">
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                ${field('Rua', 'ck_street', c.street, { style: 'flex:1;min-width:200px;' })}
+                ${field('Número *', 'ck_number', c.number, { style: 'flex:0 0 110px;' })}
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                ${field('Complemento', 'ck_complement', c.complement, { style: 'flex:1;min-width:140px;' })}
+                ${field('Bairro', 'ck_district', c.district, { style: 'flex:1;min-width:140px;' })}
+              </div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                ${field('Cidade', 'ck_city', c.city, { style: 'flex:1;min-width:160px;' })}
+                ${field('UF', 'ck_state', c.state, { style: 'flex:0 0 90px;', attr: 'maxlength="2"' })}
+              </div>
             </div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              ${field('Rua *', 'ck_street', c.street, { style: 'flex:1;min-width:200px;' })}
-              ${field('Número *', 'ck_number', c.number, { style: 'flex:0 0 110px;' })}
-            </div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              ${field('Complemento', 'ck_complement', c.complement, { style: 'flex:1;min-width:140px;' })}
-              ${field('Bairro', 'ck_district', c.district, { style: 'flex:1;min-width:140px;' })}
-            </div>
-            <div style="display:flex;gap:12px;flex-wrap:wrap;">
-              ${field('Cidade', 'ck_city', c.city, { style: 'flex:1;min-width:160px;' })}
-              ${field('UF', 'ck_state', c.state, { style: 'flex:0 0 90px;', attr: 'maxlength="2"' })}
-            </div>
+            <div id="ck_cepMsg" class="muted" style="font-size:13px;margin-top:8px;"></div>
           </div>
-          <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;">
-            <h3 style="font-size:17px;margin-bottom:14px;">Frete</h3>
-            <button id="ck_calcFrete" class="btn-out" style="padding:11px 20px;">Calcular frete</button>
-            <div id="ck_freteOpts" style="margin-top:12px;"></div>
+          <div class="card" style="${cardCss}">
+            ${stepHead(3, 'Frete')}
+            <div id="ck_freteOpts"><div class="muted" style="font-size:13px;">Informe o CEP acima para ver as opções de frete.</div></div>
           </div>
         </div>
         <div>
@@ -568,25 +556,66 @@ function renderCheckout() {
               ${lines.map((l) => `<div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:var(--muted);">${esc(l.p.name)} · ${esc(l.size.label)} · ${l.qty}x</span><span>${brl(l.size.price_cents * l.qty)}</span></div>`).join('')}
             </div>
             <div id="ck_summary" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;"></div>
-            <button id="ck_pay" class="btn-gold" style="width:100%;padding:14px;margin-top:16px;">Ir para o pagamento</button>
-            <p class="muted" style="font-size:12px;margin-top:10px;text-align:center;">Pagamento seguro via Mercado Pago — Pix, boleto ou cartão.</p>
+            <div style="margin-top:18px;">${stepHead(4, 'Pagamento')}</div>
+            <div style="margin-top:4px;">
+              <button id="ck_payMp" class="btn-gold" style="width:100%;padding:14px;">Pagar com cartão ou Pix</button>
+              <button id="ck_payWa" class="btn-out" style="width:100%;padding:13px;margin-top:10px;justify-content:center;gap:8px;">Combinar pelo WhatsApp</button>
+            </div>
+            <div id="ck_hint" class="muted" style="font-size:12px;margin-top:10px;text-align:center;"></div>
+            <p class="muted" style="font-size:12px;margin-top:8px;text-align:center;">Pagamento seguro via Mercado Pago — Pix, boleto ou cartão.</p>
             <div id="ck_err" style="color:var(--red);font-size:13px;margin-top:10px;"></div>
           </div>
         </div>
       </div>
     </div>`;
 
-  ['cep', 'email', 'name', 'phone', 'street', 'number', 'complement', 'district', 'city', 'state'].forEach((k) => {
+  // inputs simples → estado
+  ['email', 'name', 'phone', 'number', 'complement', 'street', 'district', 'city', 'state'].forEach((k) => {
     const el = $(`#ck_${k}`);
-    if (el) el.addEventListener('input', () => { state.checkout[k] = el.value; saveCheckout(); });
+    if (el) el.addEventListener('input', () => { state.checkout[k] = el.value; saveCheckout(); ckUpdate(); });
   });
-  maskCep($('#ck_cep'));
-  updateCheckoutSummary();
 
-  $('#ck_buscaCep').onclick = buscaCep;
-  $('#ck_calcFrete').onclick = checkoutCalcFrete;
-  $('#ck_pay').onclick = checkoutPay;
+  // CEP: busca endereço e calcula frete automaticamente
+  const cepEl = $('#ck_cep');
+  maskCep(cepEl);
+  cepEl.addEventListener('input', async () => {
+    state.checkout.cep = cepEl.value; saveCheckout();
+    const digits = cepEl.value.replace(/\D/g, '');
+    if (digits.length === 8) {
+      const ok = await buscaCep();
+      if (ok) { state.shipMethod = null; state.shipCents = null; await checkoutCalcFrete(); }
+    }
+    ckUpdate();
+  });
+
+  $('#ck_payMp').onclick = () => checkoutPay('mp');
+  $('#ck_payWa').onclick = () => checkoutPay('whatsapp');
+  if (c.street) lockAddrFields();
+  ckUpdate();
   bindCards();
+}
+
+function lockAddrFields() {
+  ['ck_street', 'ck_district', 'ck_city', 'ck_state'].forEach((id) => {
+    const el = $(`#${id}`);
+    if (el && el.value) { el.readOnly = true; el.style.background = 'var(--surface)'; el.style.opacity = '0.8'; }
+  });
+}
+
+function ckValid() {
+  const c = state.checkout || {};
+  const dataOk = ['email', 'name', 'cep', 'number'].every((k) => (c[k] || '').trim());
+  return { ok: dataOk && state.shipCents != null, dataOk, freteOk: state.shipCents != null };
+}
+function ckUpdate() {
+  updateCheckoutSummary();
+  const v = ckValid();
+  ['ck_payMp', 'ck_payWa'].forEach((id) => {
+    const b = $(`#${id}`);
+    if (b) { b.disabled = !v.ok; b.style.opacity = v.ok ? '1' : '.5'; b.style.cursor = v.ok ? 'pointer' : 'not-allowed'; }
+  });
+  const hint = $('#ck_hint');
+  if (hint) hint.textContent = v.ok ? '' : (!v.dataOk ? 'Preencha seus dados e o endereço (CEP e número).' : 'Escolha uma opção de frete.');
 }
 
 function updateCheckoutSummary() {
@@ -600,27 +629,34 @@ function updateCheckoutSummary() {
     <div style="display:flex;justify-content:space-between;font-weight:600;font-size:16px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;"><span>Total</span><span style="color:var(--gold);">${brl(subtotal + (ship || 0))}</span></div>`;
 }
 
+// retorna true se encontrou o endereço
 async function buscaCep() {
+  const msg = $('#ck_cepMsg');
   const cep = ($('#ck_cep').value || '').replace(/\D/g, '');
-  if (cep.length !== 8) return;
+  if (cep.length !== 8) return false;
+  if (msg) msg.textContent = 'Buscando endereço…';
   try {
     const r = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
     const d = await r.json();
-    if (d.erro) return;
-    const set = (id, v) => { const el = $(`#${id}`); if (el && v) { el.value = v; state.checkout[id.replace('ck_', '')] = v; } };
+    if (d.erro) { if (msg) msg.textContent = 'CEP não encontrado. Confira o número.'; return false; }
+    $('#ck_addr').style.display = 'block';
+    const set = (id, v) => { const el = $(`#${id}`); if (el) { if (v) { el.value = v; state.checkout[id.replace('ck_', '')] = v; } } };
     set('ck_street', d.logradouro); set('ck_district', d.bairro); set('ck_city', d.localidade); set('ck_state', d.uf);
     saveCheckout();
-    $('#ck_number').focus();
-  } catch (e) { /* ignora */ }
+    lockAddrFields();
+    if (msg) msg.textContent = '';
+    const numEl = $('#ck_number'); if (numEl && !numEl.value) numEl.focus();
+    return true;
+  } catch (e) { if (msg) msg.textContent = 'Não foi possível buscar o CEP agora.'; return false; }
 }
 
 async function checkoutCalcFrete() {
   const res = $('#ck_freteOpts');
   const from = (SETTINGS.frete_cep_origem || '').replace(/\D/g, '');
   const to = ($('#ck_cep').value || '').replace(/\D/g, '');
-  if (to.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">Informe um CEP válido.</div>`; return; }
-  if (from.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">CEP de origem não configurado no admin.</div>`; return; }
-  res.innerHTML = `<div class="muted" style="font-size:13px;">Calculando…</div>`;
+  if (to.length !== 8) return;
+  if (from.length !== 8) { res.innerHTML = `<div style="color:var(--red);font-size:13px;">Frete indisponível (CEP de origem não configurado).</div>`; return; }
+  res.innerHTML = `<div class="muted" style="font-size:13px;">Calculando frete…</div>`;
   try {
     const products = state.cart.map((it, i) => {
       const { size } = cartLineInfo(it); const pkg = packageFor(size);
@@ -630,46 +666,58 @@ async function checkoutCalcFrete() {
     const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
     if (error) throw error;
     const opts = (data && data.options) || [];
-    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção encontrada.</div>`; return; }
+    if (!opts.length) { res.innerHTML = `<div class="muted" style="font-size:13px;">Nenhuma opção de frete para este CEP.</div>`; return; }
     res.innerHTML = opts.map((o, i) => `
       <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line2);border-radius:10px;margin-bottom:8px;cursor:pointer;">
-        <input type="radio" name="ckfrete" value="${i}" style="width:auto;">
+        <input type="radio" name="ckfrete" value="${i}" ${i === 0 ? 'checked' : ''} style="width:auto;">
         <span style="flex:1;">${esc(o.company)} ${esc(o.service)}${o.days ? ' · ' + o.days + ' dia' + (o.days > 1 ? 's' : '') : ''}</span>
         <span style="color:var(--gold);">${brl(Math.round(o.price * 100))}</span>
       </label>`).join('');
-    $$('#ck_freteOpts input[name=ckfrete]').forEach((r, i) => r.onchange = () => {
-      state.shipMethod = `${opts[i].company} ${opts[i].service}`.trim();
-      state.shipCents = Math.round(opts[i].price * 100);
-      updateCheckoutSummary();
-    });
+    const pick = (i) => { state.shipMethod = `${opts[i].company} ${opts[i].service}`.trim(); state.shipCents = Math.round(opts[i].price * 100); ckUpdate(); };
+    $$('#ck_freteOpts input[name=ckfrete]').forEach((r, i) => r.onchange = () => pick(i));
+    pick(0); // pré-seleciona o mais barato
   } catch (e) {
     res.innerHTML = `<div style="color:var(--red);font-size:13px;">Não foi possível calcular o frete agora.</div>`;
   }
 }
 
-async function checkoutPay() {
+async function checkoutPay(pay) {
   const err = $('#ck_err');
+  if (!ckValid().ok) { ckUpdate(); return; }
   const c = state.checkout;
-  const req = { email: 'ck_email', name: 'ck_name', cep: 'ck_cep', street: 'ck_street', number: 'ck_number' };
-  for (const [k, id] of Object.entries(req)) { if (!($(`#${id}`).value || '').trim()) { err.textContent = 'Preencha os campos obrigatórios (*).'; $(`#${id}`).focus(); return; } }
-  if (state.shipCents == null) { err.textContent = 'Calcule e escolha o frete.'; return; }
   err.textContent = '';
-  const btn = $('#ck_pay'); btn.disabled = true; btn.textContent = 'Processando…';
+  const btnMp = $('#ck_payMp'), btnWa = $('#ck_payWa');
+  btnMp.disabled = btnWa.disabled = true;
+  const activeBtn = pay === 'whatsapp' ? btnWa : btnMp;
+  const label = activeBtn.textContent; activeBtn.textContent = 'Processando…';
   try {
     const items = state.cart.map((it) => ({ size_id: it.sizeId, qty: it.qty }));
     const customer = { email: c.email, name: c.name, phone: c.phone };
     const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
-    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: location.origin } });
+    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: location.origin, pay } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
+
+    state.cart = []; saveCart(); updateCartBadge();
+
+    if (pay === 'whatsapp') {
+      const link = `${location.origin}/?pedido=${data.token}`;
+      let msg = `Olá! Fiz o pedido *${data.number}* no site da Mr.Brant.\n`;
+      msg += `\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento, por favor? 🙏`;
+      window.open(waLink(msg), '_blank');
+      state.trackToken = data.token;
+      go('tracking');
+      return;
+    }
+
     const sandbox = (SETTINGS.mp_sandbox || 'true') === 'true';
     const url = (sandbox && data.sandbox_init_point) ? data.sandbox_init_point : data.init_point;
     if (!url) throw new Error('Link de pagamento não retornado.');
-    state.cart = []; saveCart(); // esvazia a sacola (pedido criado)
     window.location.href = url;
   } catch (e) {
-    err.textContent = 'Erro ao iniciar o pagamento: ' + (e.message || e);
-    btn.disabled = false; btn.textContent = 'Ir para o pagamento';
+    err.textContent = 'Erro ao finalizar: ' + (e.message || e);
+    btnMp.disabled = btnWa.disabled = false;
+    activeBtn.textContent = label;
   }
 }
 
