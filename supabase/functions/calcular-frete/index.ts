@@ -47,11 +47,11 @@ Deno.serve(async (req) => {
       return json({ error: 'Falha no Melhor Envio.', detail: data }, 502);
     }
 
-    // mantém só os serviços válidos dos Correios e simplifica
+    // mantém os serviços válidos (quais transportadoras aparecem é definido
+    // no painel do Melhor Envio → Configurações → Transportadoras)
     const all = Array.isArray(data) ? data : [];
     const options = all
       .filter((s) => !s.error && s.price)
-      .filter((s) => /correios/i.test(s.company?.name || ''))
       .map((s) => ({
         id: s.id,
         company: s.company?.name || '',
