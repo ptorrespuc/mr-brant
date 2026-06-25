@@ -753,10 +753,34 @@ async function checkoutPay(pay) {
 
 // ---------- ACOMPANHAMENTO ----------
 const STATUS_LABEL = { pendente: 'Aguardando pagamento', pago: 'Pago', cancelado: 'Cancelado', enviado: 'Enviado', entregue: 'Entregue' };
-async function renderTracking() {
+
+function renderTracking() {
+  if (state.trackToken) return fetchAndShowOrder({ token: state.trackToken });
+  // formulário de busca por e-mail + número
+  view.innerHTML = `
+    <div style="max-width:520px;margin:0 auto;padding:46px 28px 80px;min-height:60vh;">
+      <h1 style="font-size:28px;text-align:center;">Acompanhar pedido</h1>
+      <p class="muted" style="text-align:center;margin:8px 0 24px;">Informe o e-mail da compra e o número do pedido (ex.: MB-2026-00042).</p>
+      <div class="card" style="background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px;">
+        <div class="field"><label>E-mail</label><input id="track_email" type="email" placeholder="voce@email.com"></div>
+        <div class="field"><label>Número do pedido</label><input id="track_number" placeholder="MB-2026-00042"></div>
+        <button id="track_btn" class="btn-gold" style="width:100%;padding:13px;">Buscar pedido</button>
+        <div id="track_res" style="color:var(--red);font-size:13px;margin-top:10px;"></div>
+      </div>
+    </div>`;
+  $('#track_btn').onclick = () => {
+    const email = ($('#track_email').value || '').trim();
+    const number = ($('#track_number').value || '').trim().toUpperCase();
+    if (!email || !number) { $('#track_res').textContent = 'Informe e-mail e número do pedido.'; return; }
+    fetchAndShowOrder({ email, number });
+  };
+  bindCards();
+}
+
+async function fetchAndShowOrder(body) {
   view.innerHTML = `<div style="max-width:680px;margin:0 auto;padding:50px 28px;min-height:60vh;"><div class="muted">Carregando pedido…</div></div>`;
   try {
-    const { data, error } = await sb.functions.invoke('consultar-pedido', { body: { token: state.trackToken } });
+    const { data, error } = await sb.functions.invoke('consultar-pedido', { body });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
     const o = data.order;
@@ -779,7 +803,13 @@ async function renderTracking() {
       </div>`;
     bindCards();
   } catch (e) {
-    view.innerHTML = `<div style="max-width:680px;margin:0 auto;padding:50px 28px;min-height:60vh;text-align:center;"><h1 style="font-size:24px;">Pedido não encontrado</h1><p class="muted" style="margin:12px 0 20px;">Verifique o link de acompanhamento.</p><button class="btn-out" data-nav="home">Voltar à loja</button></div>`;
+    view.innerHTML = `
+      <div style="max-width:520px;margin:0 auto;padding:50px 28px;min-height:60vh;text-align:center;">
+        <h1 style="font-size:24px;">Pedido não encontrado</h1>
+        <p class="muted" style="margin:12px 0 20px;">Confira o e-mail e o número do pedido (ou use o link que você recebeu).</p>
+        <button class="btn-out" data-nav="track">Tentar de novo</button>
+        <button class="btn-out" data-nav="home" style="margin-left:8px;">Voltar à loja</button>
+      </div>`;
     bindCards();
   }
 }
@@ -792,6 +822,7 @@ function bindCards() {
     if (t === 'home') go('home');
     else if (t === 'imagens') go('category', { catSlug: 'imagens', sub: 'Todas' });
     else if (t === 'cart') go('cart');
+    else if (t === 'track') { state.trackToken = null; go('tracking'); }
   });
   $$('[data-cat]').forEach((el) => el.onclick = () => go('category', { catSlug: el.dataset.cat, sub: 'Todas' }));
   $$('[data-sub]').forEach((el) => el.onclick = () => go('category', { catSlug: 'imagens', sub: el.dataset.sub }));
@@ -840,6 +871,7 @@ function bindChrome() {
     if (t === 'home') go('home');
     else if (t === 'imagens') go('category', { catSlug: 'imagens', sub: 'Todas' });
     else if (t === 'cart') go('cart');
+    else if (t === 'track') { state.trackToken = null; go('tracking'); }
   });
   // footer cats preenchido após dados
 }

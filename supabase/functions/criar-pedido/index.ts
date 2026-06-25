@@ -87,10 +87,11 @@ Deno.serve(async (req) => {
     if (payMethod === 'whatsapp') {
       await admin.from('orders').update({ payment_method: 'whatsapp' }).eq('id', order.id);
       const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
+      const site = (origin || '').replace(/\/$/, '');
       await sendOrderReceivedEmail({
         to: customer.email, name: customer.name, number: order.number,
         items: orderItems, shippingCents, total, shippingMethod: shipping?.method,
-        from: fromCfg?.value,
+        from: fromCfg?.value, link: site ? `${site}/?pedido=${order.token}` : '',
       });
       return json({ number: order.number, token: order.token, pay: 'whatsapp' });
     }
@@ -162,6 +163,7 @@ async function sendOrderReceivedEmail(o: any) {
         <tr><td style="padding-top:8px;font-weight:bold;">Total</td><td style="text-align:right;padding-top:8px;font-weight:bold;">${brl(o.total)}</td></tr>
       </table>
       <p>Vamos combinar o pagamento e a entrega pelo WhatsApp. Até já!</p>
+      ${o.link ? `<p><a href="${o.link}" style="color:#9c7322;">Acompanhar meu pedido</a></p>` : ''}
       <p style="color:#6f6450;font-size:13px;">Mr.Brant — Artigos Religiosos</p>
     </div>`;
   try {
