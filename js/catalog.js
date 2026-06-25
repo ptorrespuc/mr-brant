@@ -81,6 +81,9 @@ function toast(msg) {
 }
 
 // ---------- frete ----------
+function allowedCompanies() {
+  return (SETTINGS.frete_empresas || '').split(',').map((s) => s.trim()).filter(Boolean);
+}
 function packageFor(size) {
   const num = (v, def) => (v != null && v !== '' ? Number(v) : Number(def));
   return {
@@ -118,7 +121,7 @@ async function calcFrete(idSuffix, items) {
       return { id: String(i + 1), width: pkg.width, height: pkg.height, length: pkg.length, weight: pkg.weightKg, insurance_value: pkg.insurance, quantity: it.qty };
     });
     const sandbox = (SETTINGS.frete_sandbox || 'true') === 'true';
-    const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
+    const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox, companies: allowedCompanies() } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
     const opts = data.options || [];
@@ -678,7 +681,7 @@ async function checkoutCalcFrete() {
     let opts = [];
     for (let attempt = 0; attempt < 2 && !opts.length; attempt++) {
       if (attempt) await new Promise((r) => setTimeout(r, 700));
-      const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox } });
+      const { data, error } = await sb.functions.invoke('calcular-frete', { body: { from, to, products, sandbox, companies: allowedCompanies() } });
       if (error) throw error;
       opts = (data && data.options) || [];
     }

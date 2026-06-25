@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
 
   try {
-    const { from, to, products, sandbox } = await req.json();
+    const { from, to, products, sandbox, companies } = await req.json();
 
     if (!from || !to || !Array.isArray(products) || products.length === 0) {
       return json({ error: 'Dados incompletos (from, to, products).' }, 400);
@@ -47,11 +47,15 @@ Deno.serve(async (req) => {
       return json({ error: 'Falha no Melhor Envio.', detail: data }, 502);
     }
 
-    // mantém os serviços válidos (quais transportadoras aparecem é definido
-    // no painel do Melhor Envio → Configurações → Transportadoras)
+    // lista opcional de transportadoras permitidas (configurada no admin)
+    const allow = Array.isArray(companies)
+      ? companies.map((c: string) => String(c).trim().toLowerCase()).filter(Boolean)
+      : [];
+
     const all = Array.isArray(data) ? data : [];
     const options = all
       .filter((s) => !s.error && s.price)
+      .filter((s) => !allow.length || allow.includes(String(s.company?.name || '').toLowerCase()))
       .map((s) => ({
         id: s.id,
         company: s.company?.name || '',

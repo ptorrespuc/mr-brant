@@ -16,5 +16,6 @@ insert into settings (key, value) values
   ('frete_comp_padrao',  '20'),   -- cm
   ('frete_larg_padrao',  '15'),   -- cm
   ('frete_alt_padrao',   '15'),   -- cm
-  ('frete_sandbox',      'true')  -- 'true' = ambiente de teste do Melhor Envio
+  ('frete_sandbox',      'true'),  -- 'true' = ambiente de teste do Melhor Envio
+  ('frete_empresas',     '')       -- transportadoras permitidas (ex.: 'Correios'); vazio = todas
 on conflict (key) do nothing;
