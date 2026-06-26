@@ -10,6 +10,7 @@ const hide = (el) => el.classList.add('hidden');
 
 let CATEGORIES = [];
 let SUBCATEGORIES = [];
+let BOX_SIZES = [];
 let ALL_PRODUCTS = [];
 let editing = null; // produto em edição (null = novo)
 let pendingPhotos = []; // { file?, path, url, sort } — fotos do produto atual
@@ -64,7 +65,78 @@ async function enterApp() {
 // ---------- PEDIDOS ----------
 const ORDER_STATUS = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
 const brl = (c) => 'R$ ' + ((c || 0) / 100).toFixed(2).replace('.', ',');
-function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView'].forEach((v) => hide($(v))); }
+function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView'].forEach((v) => hide($(v))); }
+
+// ---------- TAMANHOS (caixas) ----------
+$('boxesBtn').onclick = openBoxSizes;
+$('boxesBack').onclick = () => { hide($('boxesView')); show($('listView')); };
+$('boxAdd').onclick = () => addBoxRow({});
+
+async function openBoxSizes() {
+  hideAllViews(); show($('boxesView'));
+  window.scrollTo(0, 0);
+  await loadReference(); // recarrega BOX_SIZES
+  $('boxesList').innerHTML = '';
+  if (!BOX_SIZES.length) $('boxesList').innerHTML = '<p class="muted">Nenhum tamanho ainda. Clique em "+ Novo tamanho".</p>';
+  BOX_SIZES.forEach((b) => addBoxRow(b));
+}
+
+function addBoxRow(b) {
+  if ($('boxesList').querySelector('.muted')) $('boxesList').innerHTML = '';
+  const v = (x) => (x == null ? '' : x);
+  const row = document.createElement('div');
+  row.className = 'card';
+  row.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;';
+  row.dataset.id = b.id || '';
+  row.innerHTML = `
+    <div class="field" style="flex:1;min-width:120px;margin:0;"><label>Tamanho</label><input class="b-label" value="${v(b.label)}" placeholder="30 cm"></div>
+    <div class="field" style="flex:0 0 90px;margin:0;"><label>Compr.</label><input class="b-len" type="number" value="${v(b.length_cm)}"></div>
+    <div class="field" style="flex:0 0 90px;margin:0;"><label>Larg.</label><input class="b-wid" type="number" value="${v(b.width_cm)}"></div>
+    <div class="field" style="flex:0 0 90px;margin:0;"><label>Alt.</label><input class="b-hei" type="number" value="${v(b.height_cm)}"></div>
+    <div class="field" style="flex:0 0 110px;margin:0;"><label>Peso padrão (g)</label><input class="b-weight" type="number" value="${v(b.default_weight_g)}"></div>
+    <button class="btn gold sm b-save" type="button">Salvar</button>
+    <button class="btn danger sm b-del" type="button">Excluir</button>`;
+  row.querySelector('.b-save').onclick = () => saveBox(row);
+  row.querySelector('.b-del').onclick = () => deleteBox(row);
+  $('boxesList').appendChild(row);
+}
+
+async function saveBox(row) {
+  const intOrNull = (sel) => { const n = parseInt(row.querySelector(sel).value, 10); return Number.isFinite(n) ? n : null; };
+  const label = row.querySelector('.b-label').value.trim();
+  if (!label) { toast('Informe o nome do tamanho'); return; }
+  const payload = {
+    label,
+    length_cm: intOrNull('.b-len'), width_cm: intOrNull('.b-wid'), height_cm: intOrNull('.b-hei'),
+    default_weight_g: intOrNull('.b-weight'),
+  };
+  show($('loader'));
+  try {
+    if (row.dataset.id) {
+      const { error } = await sb.from('box_sizes').update(payload).eq('id', row.dataset.id);
+      if (error) throw error;
+    } else {
+      payload.sort = BOX_SIZES.length;
+      const { data, error } = await sb.from('box_sizes').insert(payload).select('id').single();
+      if (error) throw error;
+      row.dataset.id = data.id;
+    }
+    await loadReference();
+    hide($('loader')); toast('Tamanho salvo');
+  } catch (e) { hide($('loader')); toast('Erro: ' + (e.message || e)); }
+}
+
+async function deleteBox(row) {
+  if (!row.dataset.id) { row.remove(); return; }
+  if (!confirm('Excluir este tamanho? Produtos que o usam ficarão sem tamanho.')) return;
+  show($('loader'));
+  const { error } = await sb.from('box_sizes').delete().eq('id', row.dataset.id);
+  hide($('loader'));
+  if (error) { toast('Erro ao excluir: ' + error.message); return; }
+  await loadReference();
+  row.remove();
+  toast('Tamanho excluído');
+}
 
 $('ordersBtn').onclick = openOrders;
 $('ordersBack').onclick = () => { hide($('ordersView')); show($('listView')); };
@@ -188,20 +260,21 @@ $('settingsSave').onclick = async () => {
 
 // ---------- REFERÊNCIA (categorias/subcategorias) ----------
 async function loadReference() {
-  const [cats, subs] = await Promise.all([
+  const [cats, subs, boxes] = await Promise.all([
     sb.from('categories').select('*').order('sort'),
     sb.from('subcategories').select('*').order('sort'),
+    sb.from('box_sizes').select('*').order('sort'),
   ]);
   CATEGORIES = cats.data || [];
   SUBCATEGORIES = subs.data || [];
+  BOX_SIZES = boxes.data || [];
 }
 
 // ---------- LISTAGEM ----------
 async function loadProducts() {
-  const { data } = await sb.from('products')
-    .select('*, product_images(*), product_sizes(*)')
-    .order('sort');
-  ALL_PRODUCTS = data || [];
+  let r = await sb.from('products').select('*, product_images(*), product_sizes(*, box_sizes(*))').order('sort');
+  if (r.error) r = await sb.from('products').select('*, product_images(*), product_sizes(*)').order('sort');
+  ALL_PRODUCTS = r.data || [];
   renderList();
 }
 
@@ -352,26 +425,39 @@ function renderThumbs() {
   });
 }
 
-// ---------- TAMANHOS ----------
+// ---------- TAMANHOS DO PRODUTO ----------
 $('addSize').onclick = () => addSizeRow({});
+function boxDimsText(box) {
+  if (!box) return '';
+  const d = [box.length_cm, box.width_cm, box.height_cm].filter((x) => x != null);
+  const dims = d.length === 3 ? `${d[0]}×${d[1]}×${d[2]} cm` : 'sem dimensões';
+  return `Caixa: ${dims}${box.default_weight_g != null ? ` · peso padrão ${box.default_weight_g} g` : ''}`;
+}
 function addSizeRow(s = {}) {
   const v = (x) => (x == null ? '' : x);
   const row = document.createElement('div');
   row.style.cssText = 'background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;';
   row.className = 'size-block';
+  const opts = '<option value="">— escolha o tamanho —</option>' +
+    BOX_SIZES.map((b) => `<option value="${b.id}" ${b.id === s.box_size_id ? 'selected' : ''}>${b.label}</option>`).join('');
   row.innerHTML = `
-    <div class="size-row">
-      <input class="s-label" placeholder="Tamanho (ex.: 30 cm)" value="${v(s.label)}">
-      <input class="s-price" type="number" step="0.01" placeholder="Preço (189,90)" value="${s.price_cents == null ? '' : (s.price_cents / 100).toFixed(2)}">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
+      <select class="s-box" style="flex:1;min-width:140px;">${opts}</select>
+      <input class="s-price" type="number" step="0.01" placeholder="Preço (189,90)" value="${s.price_cents == null ? '' : (s.price_cents / 100).toFixed(2)}" style="flex:1;min-width:120px;">
+      <input class="s-weight" type="number" placeholder="Peso (g)" value="${v(s.weight_g)}" style="flex:0 0 110px;">
       <button class="btn sm danger" type="button">×</button>
     </div>
-    <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-      <input class="s-weight" type="number" placeholder="Peso (g)" value="${v(s.weight_g)}" style="flex:1;min-width:90px;">
-      <input class="s-len" type="number" placeholder="Compr. (cm)" value="${v(s.length_cm)}" style="flex:1;min-width:90px;">
-      <input class="s-wid" type="number" placeholder="Larg. (cm)" value="${v(s.width_cm)}" style="flex:1;min-width:90px;">
-      <input class="s-hei" type="number" placeholder="Alt. (cm)" value="${v(s.height_cm)}" style="flex:1;min-width:90px;">
-    </div>
-    <p class="muted" style="margin-top:6px;font-size:12px;">Peso e dimensões são usados no cálculo do frete. Se ficar vazio, usa o padrão das Configurações.</p>`;
+    <p class="muted s-dims" style="margin-top:6px;font-size:12px;"></p>`;
+  const sel = row.querySelector('.s-box');
+  const weight = row.querySelector('.s-weight');
+  const dims = row.querySelector('.s-dims');
+  const refresh = (prefill) => {
+    const box = BOX_SIZES.find((b) => b.id === sel.value);
+    dims.textContent = box ? boxDimsText(box) : 'Cadastre os tamanhos na aba "Tamanhos".';
+    if (prefill && box && !weight.value && box.default_weight_g != null) weight.value = box.default_weight_g;
+  };
+  sel.onchange = () => refresh(true);
+  refresh(false);
   row.querySelector('button').onclick = () => row.remove();
   $('sizes').appendChild(row);
 }
@@ -432,16 +518,18 @@ $('saveBtn').onclick = async () => {
       .filter((s) => s.k || s.v);
     const intOrNull = (el) => { const n = parseInt(el.value, 10); return Number.isFinite(n) ? n : null; };
     const sizes = Array.from(document.querySelectorAll('#sizes .size-block'))
-      .map((r, i) => ({
-        label: r.querySelector('.s-label').value.trim(),
-        price_cents: Math.round(parseFloat(r.querySelector('.s-price').value.replace(',', '.')) * 100) || 0,
-        weight_g: intOrNull(r.querySelector('.s-weight')),
-        length_cm: intOrNull(r.querySelector('.s-len')),
-        width_cm: intOrNull(r.querySelector('.s-wid')),
-        height_cm: intOrNull(r.querySelector('.s-hei')),
-        sort: i,
-      }))
-      .filter((s) => s.label);
+      .map((r, i) => {
+        const boxId = r.querySelector('.s-box').value;
+        const box = BOX_SIZES.find((b) => b.id === boxId);
+        return {
+          box_size_id: boxId || null,
+          label: box ? box.label : '',
+          price_cents: Math.round(parseFloat(r.querySelector('.s-price').value.replace(',', '.')) * 100) || 0,
+          weight_g: intOrNull(r.querySelector('.s-weight')),
+          sort: i,
+        };
+      })
+      .filter((s) => s.box_size_id);
 
     const payload = {
       name, slug,

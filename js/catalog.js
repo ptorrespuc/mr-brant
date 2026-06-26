@@ -61,7 +61,7 @@ function orderText(items) {
     total += line;
     msg += `\n• *${p.name}*`;
     if (subName(p)) msg += `\n   Linha: ${subName(p)}`;
-    if (size) msg += `\n   Tamanho: ${size.label}`;
+    if (size) msg += `\n   Tamanho: ${sizeLabel(size)}`;
     msg += `\n   Qtd: ${qty}`;
     if (size) msg += ` × ${brl(size.price_cents)} = ${brl(line)}`;
     if (p.obs) msg += `\n   Obs.: ${p.obs}`;
@@ -84,13 +84,16 @@ function toast(msg) {
 function allowedCompanies() {
   return (SETTINGS.frete_empresas || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
+function sizeLabel(s) { return (s && (s.box_sizes?.label || s.label)) || ''; }
 function packageFor(size) {
   const num = (v, def) => (v != null && v !== '' ? Number(v) : Number(def));
+  const box = size && size.box_sizes;
+  // dimensões vêm do tamanho-caixa (ou das colunas antigas, ou do padrão das configs)
   return {
-    weightKg: num(size && size.weight_g, SETTINGS.frete_peso_padrao || 500) / 1000,
-    length: num(size && size.length_cm, SETTINGS.frete_comp_padrao || 20),
-    width: num(size && size.width_cm, SETTINGS.frete_larg_padrao || 15),
-    height: num(size && size.height_cm, SETTINGS.frete_alt_padrao || 15),
+    weightKg: num(size && size.weight_g, num(box && box.default_weight_g, SETTINGS.frete_peso_padrao || 500)) / 1000,
+    length: num((box && box.length_cm) ?? (size && size.length_cm), SETTINGS.frete_comp_padrao || 20),
+    width: num((box && box.width_cm) ?? (size && size.width_cm), SETTINGS.frete_larg_padrao || 15),
+    height: num((box && box.height_cm) ?? (size && size.height_cm), SETTINGS.frete_alt_padrao || 15),
     insurance: size ? size.price_cents / 100 : 0,
   };
 }
@@ -145,18 +148,25 @@ function maskCep(el) {
   });
 }
 
+// busca produtos; se a tabela box_sizes ainda não existir, usa o formato antigo
+async function fetchProductsCatalog() {
+  let r = await sb.from('products').select('*, product_images(*), product_sizes(*, box_sizes(*))').eq('active', true).order('sort');
+  if (r.error) r = await sb.from('products').select('*, product_images(*), product_sizes(*)').eq('active', true).order('sort');
+  return r.data || [];
+}
+
 // ---------- carregar dados ----------
 async function loadData() {
   const [cats, subs, prods, rels, sett] = await Promise.all([
     sb.from('categories').select('*').order('sort'),
     sb.from('subcategories').select('*').order('sort'),
-    sb.from('products').select('*, product_images(*), product_sizes(*)').eq('active', true).order('sort'),
+    fetchProductsCatalog(),
     sb.from('product_relations').select('*'),
     sb.from('settings').select('*'),
   ]);
   CATEGORIES = cats.data || [];
   SUBCATEGORIES = subs.data || [];
-  PRODUCTS = prods.data || [];
+  PRODUCTS = prods || [];
   RELATIONS = rels.data || [];
   SETTINGS = {};
   (sett.data || []).forEach((r) => { SETTINGS[r.key] = r.value; });
@@ -395,7 +405,7 @@ function renderProduct() {
           <div style="margin-top:22px;">
             <div style="font-size:13px;color:var(--text);margin-bottom:10px;">Tamanho</div>
             <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              ${sizes.map((s) => `<button class="size-opt ${s.id === (sel && sel.id) ? 'active' : ''}" data-size="${s.id}">${esc(s.label)}</button>`).join('')}
+              ${sizes.map((s) => `<button class="size-opt ${s.id === (sel && sel.id) ? 'active' : ''}" data-size="${s.id}">${esc(sizeLabel(s))}</button>`).join('')}
             </div>
           </div>` : ''}
           ${p.note ? `<div style="margin-top:16px;display:inline-flex;align-items:center;gap:8px;color:var(--gold2);font-size:13.5px;background:var(--surface);border:1px solid var(--line2);border-radius:10px;padding:9px 14px;">${esc(p.note)}</div>` : ''}
@@ -470,7 +480,7 @@ function renderCart() {
                 <div style="width:88px;aspect-ratio:4/5;border-radius:10px;overflow:hidden;background:#0d0a05 no-repeat;${imgFitStyle(l.p)}flex:none;background-image:url('${mainPhoto(l.p)}')"></div>
                 <div style="flex:1;display:flex;flex-direction:column;">
                   <div style="font-family:Cinzel,serif;font-size:16px;line-height:1.25;">${esc(l.p.name)}</div>
-                  <div style="color:var(--muted);font-size:13px;margin-top:3px;">Tamanho: ${esc(l.size.label)}</div>
+                  <div style="color:var(--muted);font-size:13px;margin-top:3px;">Tamanho: ${esc(sizeLabel(l.size))}</div>
                   <div style="margin-top:auto;display:flex;align-items:center;gap:14px;">
                     <div class="qtybox">
                       <button data-dec="${l.idx}" style="width:34px;height:36px;font-size:18px;">−</button>
@@ -558,7 +568,7 @@ function renderCheckout() {
           <div class="card" style="background:var(--surface);border:1px solid var(--line2);border-radius:16px;padding:22px;position:sticky;top:90px;">
             <h3 style="font-size:18px;margin-bottom:14px;">Resumo</h3>
             <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
-              ${lines.map((l) => `<div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:var(--muted);">${esc(l.p.name)} · ${esc(l.size.label)} · ${l.qty}x</span><span>${brl(l.size.price_cents * l.qty)}</span></div>`).join('')}
+              ${lines.map((l) => `<div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:var(--muted);">${esc(l.p.name)} · ${esc(sizeLabel(l.size))} · ${l.qty}x</span><span>${brl(l.size.price_cents * l.qty)}</span></div>`).join('')}
             </div>
             <div id="ck_summary" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;"></div>
             <div style="margin-top:18px;">${stepHead(4, 'Pagamento')}</div>

@@ -87,6 +87,7 @@
     <span class="logo">Mr.Brant</span>
     <span class="muted">Admin</span>
     <span class="spacer"></span>
+    <button id="boxesBtn" class="btn">📏 Tamanhos</button>
     <button id="ordersBtn" class="btn">📦 Pedidos</button>
     <button id="settingsBtn" class="btn">⚙ Configurações</button>
     <button id="newBtn" class="btn gold">+ Nova imagem</button>
@@ -99,6 +100,18 @@
       <h2 style="margin-bottom:16px;">Imagens cadastradas</h2>
       <div id="prodList" class="prod-list"></div>
       <p id="emptyMsg" class="muted hidden">Nenhuma imagem ainda. Clique em "+ Nova imagem".</p>
+    </div>
+
+    <!-- TAMANHOS (caixas) -->
+    <div id="boxesView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <button id="boxesBack" class="btn sm">← Voltar</button>
+        <h2>Tamanhos</h2>
+        <span class="spacer" style="flex:1;"></span>
+        <button id="boxAdd" class="btn gold">+ Novo tamanho</button>
+      </div>
+      <p class="muted" style="margin-bottom:16px;">Cada tamanho é uma caixa com dimensões e peso padrão. Ao cadastrar uma imagem, você escolhe o tamanho e só informa o peso (já vem preenchido com o padrão).</p>
+      <div id="boxesList"></div>
     </div>
 
     <!-- PEDIDOS -->
@@ -283,7 +296,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625c"></script>
-<script src="js/admin.js?v=20260625c"></script>
+<script src="js/config.js?v=20260625d"></script>
+<script src="js/admin.js?v=20260625d"></script>
 </body>
 </html>

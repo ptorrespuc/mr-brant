@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
     const sizeIds = items.map((i: any) => i.size_id);
     const { data: sizes, error: szErr } = await admin
       .from('product_sizes')
-      .select('id, label, price_cents, product_id, products(name)')
+      .select('id, label, price_cents, product_id, products(name), box_sizes(label)')
       .in('id', sizeIds);
     if (szErr) throw szErr;
 
@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       orderItems.push({
         product_id: sz.product_id,
         product_name: (sz as any).products?.name || 'Peça',
-        size_label: sz.label,
+        size_label: (sz as any).box_sizes?.label || sz.label,
         unit_price_cents: sz.price_cents,
         qty,
         line_total_cents: line,
