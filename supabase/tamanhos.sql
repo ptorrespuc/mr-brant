@@ -8,7 +8,7 @@
 
 create table if not exists box_sizes (
   id                uuid primary key default gen_random_uuid(),
-  label             text not null,        -- ex.: "30 cm"
+  label             text not null unique, -- ex.: "30 cm"
   length_cm         int,                  -- comprimento da caixa
   width_cm          int,                  -- largura
   height_cm         int,                  -- altura
@@ -28,17 +28,17 @@ create policy "auth write box_sizes" on box_sizes for all
 -- (As colunas antigas de dimensão continuam por compatibilidade.)
 alter table product_sizes add column if not exists box_size_id uuid references box_sizes(id) on delete set null;
 
--- ---------- Tamanhos iniciais (dimensões/pesos ESTIMADOS — ajuste depois) ----------
+-- ---------- Tamanhos iniciais (dimensões/pesos informados; 40 cm estimado) ----------
 insert into box_sizes (label, length_cm, width_cm, height_cm, default_weight_g, sort) values
-  ('18 cm', 20, 15, 15,  500, 0),
-  ('20 cm', 22, 16, 16,  600, 1),
-  ('22 cm', 25, 17, 17,  700, 2),
-  ('25 cm', 28, 18, 18,  900, 3),
-  ('30 cm', 33, 20, 20, 1200, 4),
-  ('40 cm', 45, 25, 25, 2000, 5),
-  ('50 cm', 55, 30, 30, 3500, 6),
-  ('60 cm', 65, 35, 35, 5000, 7)
-on conflict do nothing;
+  ('18 cm', 25, 25, 25,  400, 0),
+  ('20 cm', 25, 25, 25,  400, 1),
+  ('22 cm', 25, 25, 25,  400, 2),
+  ('25 cm', 20, 20, 30,  800, 3),
+  ('30 cm', 20, 20, 40,  800, 4),
+  ('40 cm', 25, 25, 50, 3000, 5),
+  ('50 cm', 30, 30, 60, 3000, 6),
+  ('60 cm', 30, 40, 70, 4000, 7)
+on conflict (label) do nothing;
 
 -- ---------- Religa os tamanhos atuais dos produtos ao catálogo (por label) ----------
 update product_sizes ps
