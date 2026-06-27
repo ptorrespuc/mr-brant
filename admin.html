@@ -116,12 +116,30 @@
 
     <!-- PEDIDOS -->
     <div id="ordersView" class="hidden">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
         <button id="ordersBack" class="btn sm">← Voltar</button>
         <h2>Pedidos</h2>
       </div>
+
+      <div class="card" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div id="periodBtns" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn sm" data-period="today">Hoje</button>
+          <button class="btn sm" data-period="7">7 dias</button>
+          <button class="btn sm gold" data-period="30">30 dias</button>
+          <button class="btn sm" data-period="month">Este mês</button>
+          <button class="btn sm" data-period="all">Tudo</button>
+        </div>
+        <span style="flex:1;"></span>
+        <div class="field" style="margin:0;"><label>De</label><input id="periodFrom" type="date" style="width:auto;"></div>
+        <div class="field" style="margin:0;"><label>Até</label><input id="periodTo" type="date" style="width:auto;"></div>
+        <button id="periodApply" class="btn sm">Aplicar</button>
+      </div>
+
+      <div id="ordersKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;"></div>
+
+      <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Pedidos no período</h3>
       <div id="ordersList"></div>
-      <p id="ordersEmpty" class="muted hidden">Nenhum pedido ainda.</p>
+      <p id="ordersEmpty" class="muted hidden">Nenhum pedido no período.</p>
     </div>
 
     <!-- DETALHE DO PEDIDO -->
@@ -296,7 +314,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625d"></script>
-<script src="js/admin.js?v=20260625d"></script>
+<script src="js/config.js?v=20260625e"></script>
+<script src="js/admin.js?v=20260625e"></script>
 </body>
 </html>

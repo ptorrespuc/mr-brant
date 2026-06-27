@@ -64,7 +64,7 @@ async function enterApp() {
 
 // ---------- PEDIDOS ----------
 const ORDER_STATUS = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
-const brl = (c) => 'R$ ' + ((c || 0) / 100).toFixed(2).replace('.', ',');
+const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView'].forEach((v) => hide($(v))); }
 
 // ---------- TAMANHOS (caixas) ----------
@@ -142,12 +142,72 @@ $('ordersBtn').onclick = openOrders;
 $('ordersBack').onclick = () => { hide($('ordersView')); show($('listView')); };
 $('orderBack').onclick = () => { hide($('orderView')); openOrders(); };
 
+const PAID_STATUS = ['pago', 'enviado', 'entregue'];
+let ordersPeriod = '30'; // período selecionado
+
+function periodRange(period) {
+  const now = new Date();
+  const start = new Date(now);
+  if (period === 'today') start.setHours(0, 0, 0, 0);
+  else if (period === '7') { start.setDate(now.getDate() - 7); }
+  else if (period === '30') { start.setDate(now.getDate() - 30); }
+  else if (period === 'month') { start.setDate(1); start.setHours(0, 0, 0, 0); }
+  else if (period === 'all') return { from: null, to: null };
+  else return null; // custom: usa os inputs
+  return { from: start.toISOString(), to: null };
+}
+
+$('periodApply').onclick = () => {
+  const f = $('periodFrom').value, t = $('periodTo').value;
+  ordersPeriod = 'custom';
+  $$('#periodBtns [data-period]').forEach((b) => b.classList.remove('gold'));
+  loadOrders({ from: f ? new Date(f + 'T00:00:00').toISOString() : null, to: t ? new Date(t + 'T23:59:59').toISOString() : null });
+};
+function $$(sel) { return Array.from(document.querySelectorAll(sel)); }
+
 async function openOrders() {
   hideAllViews(); show($('ordersView'));
   window.scrollTo(0, 0);
-  const { data, error } = await sb.from('orders').select('*').order('created_at', { ascending: false });
+  $$('#periodBtns [data-period]').forEach((b) => {
+    b.onclick = () => {
+      ordersPeriod = b.dataset.period;
+      $$('#periodBtns [data-period]').forEach((x) => x.classList.toggle('gold', x === b));
+      $('periodFrom').value = ''; $('periodTo').value = '';
+      loadOrders(periodRange(ordersPeriod));
+    };
+  });
+  loadOrders(periodRange(ordersPeriod));
+}
+
+async function loadOrders(range) {
   const list = $('ordersList');
+  const kpis = $('ordersKpis');
+  kpis.innerHTML = '';
+  list.innerHTML = '<p class="muted">Carregando…</p>';
+  let q = sb.from('orders').select('*').order('created_at', { ascending: false });
+  if (range && range.from) q = q.gte('created_at', range.from);
+  if (range && range.to) q = q.lte('created_at', range.to);
+  const { data, error } = await q;
   if (error) { list.innerHTML = `<p class="muted">Erro ao carregar pedidos. (Rodou o pedidos.sql?)</p>`; return; }
+
+  // KPIs
+  const paid = data.filter((o) => PAID_STATUS.includes(o.status));
+  const faturamento = paid.reduce((s, o) => s + (o.total_cents || 0), 0);
+  const pendente = data.filter((o) => o.status === 'pendente').reduce((s, o) => s + (o.total_cents || 0), 0);
+  const ticket = paid.length ? Math.round(faturamento / paid.length) : 0;
+  const kpi = (label, value, sub) => `
+    <div class="card" style="margin:0;">
+      <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;">${label}</div>
+      <div style="font-family:Cinzel,serif;font-size:26px;color:var(--gold);margin-top:6px;">${value}</div>
+      ${sub ? `<div class="muted" style="font-size:12px;margin-top:4px;">${sub}</div>` : ''}
+    </div>`;
+  kpis.innerHTML =
+    kpi('Pedidos', data.length, `${paid.length} pago${paid.length !== 1 ? 's' : ''}`) +
+    kpi('Faturamento', brl(faturamento), 'pedidos pagos') +
+    kpi('Ticket médio', brl(ticket), 'por pedido pago') +
+    kpi('A receber', brl(pendente), 'aguardando pagamento');
+
+  // lista
   if (!data.length) { list.innerHTML = ''; show($('ordersEmpty')); return; }
   hide($('ordersEmpty'));
   list.innerHTML = data.map((o) => `
