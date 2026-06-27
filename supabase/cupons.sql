@@ -6,8 +6,8 @@
 create table if not exists coupons (
   id           uuid primary key default gen_random_uuid(),
   code         text unique not null,                     -- ex.: BEMVINDO10
-  type         text not null check (type in ('percent', 'fixed')),
-  value        int  not null,                            -- percent: 1-100 | fixed: centavos
+  type         text not null check (type in ('percent', 'fixed', 'free_shipping')),
+  value        int  not null default 0,                  -- percent: 1-100 | fixed: centavos | free_shipping: ignorado
   valid_from   date,
   valid_until  date,
   active       boolean not null default true,
@@ -24,3 +24,8 @@ create policy "admin coupons" on coupons for all
 -- Guarda o cupom e o desconto aplicado no pedido
 alter table orders add column if not exists coupon_code   text;
 alter table orders add column if not exists discount_cents int not null default 0;
+
+-- (para bancos que já tinham a tabela) habilita o tipo "free_shipping"
+alter table coupons drop constraint if exists coupons_type_check;
+alter table coupons add constraint coupons_type_check check (type in ('percent', 'fixed', 'free_shipping'));
+alter table coupons alter column value set default 0;

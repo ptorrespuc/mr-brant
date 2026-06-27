@@ -93,15 +93,22 @@ function addCouponRow(c) {
   row.dataset.id = c.id || '';
   row.innerHTML = `
     <div class="field" style="flex:1;min-width:120px;margin:0;"><label>Código</label><input class="c-code" value="${v(c.code)}" placeholder="BEMVINDO10" style="text-transform:uppercase;"></div>
-    <div class="field" style="flex:0 0 130px;margin:0;"><label>Tipo</label>
-      <select class="c-type"><option value="percent" ${isPercent ? 'selected' : ''}>Percentual (%)</option><option value="fixed" ${!isPercent ? 'selected' : ''}>Valor fixo (R$)</option></select>
+    <div class="field" style="flex:0 0 150px;margin:0;"><label>Tipo</label>
+      <select class="c-type">
+        <option value="percent" ${c.type === 'percent' || !c.type ? 'selected' : ''}>Percentual (%)</option>
+        <option value="fixed" ${c.type === 'fixed' ? 'selected' : ''}>Valor fixo (R$)</option>
+        <option value="free_shipping" ${c.type === 'free_shipping' ? 'selected' : ''}>Frete grátis</option>
+      </select>
     </div>
-    <div class="field" style="flex:0 0 110px;margin:0;"><label>Valor</label><input class="c-value" type="number" step="0.01" value="${valueShown}" placeholder="${isPercent ? '10' : '20,00'}"></div>
+    <div class="field c-valbox" style="flex:0 0 110px;margin:0;${c.type === 'free_shipping' ? 'display:none;' : ''}"><label>Valor</label><input class="c-value" type="number" step="0.01" value="${valueShown}" placeholder="${isPercent ? '10' : '20,00'}"></div>
     <div class="field" style="flex:0 0 140px;margin:0;"><label>Válido de</label><input class="c-from" type="date" value="${v(c.valid_from)}"></div>
     <div class="field" style="flex:0 0 140px;margin:0;"><label>Válido até</label><input class="c-until" type="date" value="${v(c.valid_until)}"></div>
     <label style="display:flex;align-items:center;gap:6px;margin:0 0 10px;text-transform:none;"><input class="c-active" type="checkbox" style="width:auto;" ${c.active === false ? '' : 'checked'}> ativo</label>
     <button class="btn gold sm c-save" type="button">Salvar</button>
     <button class="btn danger sm c-del" type="button">Excluir</button>`;
+  row.querySelector('.c-type').onchange = (e) => {
+    row.querySelector('.c-valbox').style.display = e.target.value === 'free_shipping' ? 'none' : '';
+  };
   row.querySelector('.c-save').onclick = () => saveCoupon(row);
   row.querySelector('.c-del').onclick = () => deleteCoupon(row);
   $('couponsList').appendChild(row);
@@ -111,10 +118,13 @@ async function saveCoupon(row) {
   const code = row.querySelector('.c-code').value.trim().toUpperCase();
   if (!code) { toast('Informe o código'); return; }
   const type = row.querySelector('.c-type').value;
-  const raw = parseFloat(row.querySelector('.c-value').value.replace(',', '.'));
-  if (!Number.isFinite(raw) || raw <= 0) { toast('Informe um valor válido'); return; }
-  if (type === 'percent' && raw > 100) { toast('Percentual máximo é 100'); return; }
-  const value = type === 'fixed' ? Math.round(raw * 100) : Math.round(raw);
+  let value = 0;
+  if (type !== 'free_shipping') {
+    const raw = parseFloat(row.querySelector('.c-value').value.replace(',', '.'));
+    if (!Number.isFinite(raw) || raw <= 0) { toast('Informe um valor válido'); return; }
+    if (type === 'percent' && raw > 100) { toast('Percentual máximo é 100'); return; }
+    value = type === 'fixed' ? Math.round(raw * 100) : Math.round(raw);
+  }
   const payload = {
     code, type, value,
     valid_from: row.querySelector('.c-from').value || null,

@@ -55,8 +55,8 @@ Deno.serve(async (req) => {
 
     const shippingCents = Math.max(0, parseInt(shipping?.price_cents, 10) || 0);
 
-    // cupom (revalidado no servidor; desconto nunca maior que o subtotal)
-    const { code: couponCode, discount } = await evalCoupon(admin, coupon, subtotal);
+    // cupom (revalidado no servidor; desconto nunca maior que o subtotal/frete)
+    const { code: couponCode, discount } = await evalCoupon(admin, coupon, subtotal, shippingCents);
     const total = subtotal - discount + shippingCents;
 
     // upsert do cliente
@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
 });
 
 // avalia um cupom (mesma lógica da função validar-cupom)
-async function evalCoupon(admin: any, code: string, subtotal: number) {
+async function evalCoupon(admin: any, code: string, subtotal: number, shipping: number) {
   const c = (code || '').trim().toUpperCase();
   if (!c) return { code: '', discount: 0 };
   const { data: coupon } = await admin.from('coupons').select('*').eq('code', c).maybeSingle();
@@ -170,8 +170,9 @@ async function evalCoupon(admin: any, code: string, subtotal: number) {
   const today = new Date().toISOString().slice(0, 10);
   if (coupon.valid_from && today < coupon.valid_from) return { code: '', discount: 0 };
   if (coupon.valid_until && today > coupon.valid_until) return { code: '', discount: 0 };
-  let discount = coupon.type === 'percent' ? Math.round((subtotal * coupon.value) / 100) : coupon.value;
-  discount = Math.max(0, Math.min(discount, subtotal));
+  const freeShipping = coupon.type === 'free_shipping';
+  let discount = freeShipping ? shipping : (coupon.type === 'percent' ? Math.round((subtotal * coupon.value) / 100) : coupon.value);
+  discount = Math.max(0, Math.min(discount, freeShipping ? shipping : subtotal));
   return { code: c, discount };
 }
 

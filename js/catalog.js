@@ -18,7 +18,7 @@ const state = {
   screen: 'home', catSlug: 'imagens', sub: 'Todas', prodId: null,
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
   checkout: loadCheckout(), shipMethod: null, shipCents: null, trackToken: null,
-  coupon: { code: '', discount: 0 },
+  coupon: { code: '', discount: 0, freeShipping: false },
 };
 function loadCheckout() { try { return JSON.parse(localStorage.getItem('mrbrant_checkout')) || {}; } catch (e) { return {}; } }
 function saveCheckout() { try { localStorage.setItem('mrbrant_checkout', JSON.stringify(state.checkout)); } catch (e) {} }
@@ -654,27 +654,32 @@ function updateCheckoutSummary() {
   if (!el) return;
   const subtotal = cartSubtotal();
   const ship = state.shipCents;
-  const disc = state.coupon.discount || 0;
-  const total = Math.max(0, subtotal - disc) + (ship || 0);
+  const free = state.coupon.freeShipping;
+  const disc = free ? 0 : (state.coupon.discount || 0);
+  const shipCharged = free ? 0 : (ship || 0);
+  const total = Math.max(0, subtotal - disc) + shipCharged;
+  const freteVal = ship == null ? '—'
+    : (free ? `<s style="color:var(--muted);">${brl(ship)}</s> <span style="color:var(--green);">Grátis</span>` : brl(ship));
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
     ${disc > 0 ? `<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;color:var(--green);"><span>Desconto${state.coupon.code ? ' (' + esc(state.coupon.code) + ')' : ''}</span><span>− ${brl(disc)}</span></div>` : ''}
-    <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Frete${state.shipMethod ? ' (' + esc(state.shipMethod) + ')' : ''}</span><span>${ship == null ? '—' : brl(ship)}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Frete${state.shipMethod ? ' (' + esc(state.shipMethod) + ')' : ''}</span><span>${freteVal}</span></div>
     <div style="display:flex;justify-content:space-between;font-weight:600;font-size:16px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;"><span>Total</span><span style="color:var(--gold);">${brl(total)}</span></div>`;
 }
 
 async function applyCoupon() {
   const msg = $('#ck_couponMsg');
   const code = ($('#ck_coupon').value || '').trim().toUpperCase();
-  state.coupon = { code: '', discount: 0 };
+  state.coupon = { code: '', discount: 0, freeShipping: false };
   if (!code) { msg.textContent = ''; updateCheckoutSummary(); return; }
   msg.style.color = 'var(--muted)'; msg.textContent = 'Validando…';
   try {
-    const { data, error } = await sb.functions.invoke('validar-cupom', { body: { code, subtotal_cents: cartSubtotal() } });
+    const { data, error } = await sb.functions.invoke('validar-cupom', { body: { code, subtotal_cents: cartSubtotal(), shipping_cents: state.shipCents || 0 } });
     if (error) throw error;
     if (data.valid) {
-      state.coupon = { code: data.code, discount: data.discount };
-      msg.style.color = 'var(--green)'; msg.textContent = `${data.message} − ${brl(data.discount)}`;
+      state.coupon = { code: data.code, discount: data.free_shipping ? 0 : data.discount, freeShipping: !!data.free_shipping };
+      msg.style.color = 'var(--green)';
+      msg.textContent = data.free_shipping ? 'Frete grátis aplicado!' : `${data.message} − ${brl(data.discount)}`;
     } else {
       msg.style.color = 'var(--red)'; msg.textContent = data.message || 'Cupom inválido.';
     }
@@ -778,9 +783,14 @@ async function checkoutPay(pay) {
       const link = `${siteBase()}?pedido=${data.token}`;
       let msg = `Olá! Fiz o pedido *${data.number}* na Mr.Brant.\n\n*Itens:*`;
       waItems.forEach(({ p, size, qty }) => { msg += `\n• ${p.name} — ${sizeLabel(size)} — ${qty}x — ${brl(size.price_cents * qty)}`; });
-      if (state.coupon.discount > 0) msg += `\n\nDesconto (${state.coupon.code}): − ${brl(state.coupon.discount)}`;
-      msg += `\n${state.coupon.discount > 0 ? '' : '\n'}Frete: ${state.shipCents ? `${state.shipMethod || 'Frete'} — ${brl(state.shipCents)}` : 'a combinar'}`;
-      msg += `\n*Total:* ${brl(Math.max(0, waSubtotal - (state.coupon.discount || 0)) + (state.shipCents || 0))}`;
+      const free = state.coupon.freeShipping;
+      const disc = free ? 0 : (state.coupon.discount || 0);
+      if (disc > 0) msg += `\n\nDesconto (${state.coupon.code}): − ${brl(disc)}`;
+      const freteTxt = state.shipCents
+        ? (free ? `${state.shipMethod || 'Frete'} — GRÁTIS (${state.coupon.code})` : `${state.shipMethod || 'Frete'} — ${brl(state.shipCents)}`)
+        : 'a combinar';
+      msg += `\n\nFrete: ${freteTxt}`;
+      msg += `\n*Total:* ${brl(Math.max(0, waSubtotal - disc) + (free ? 0 : (state.shipCents || 0)))}`;
       const addr = [c.street && `${c.street}, ${c.number || ''}`, c.district, c.city && `${c.city}/${c.state || ''}`, c.cep].filter(Boolean).join(' · ');
       if (addr) msg += `\n\nEntrega: ${addr}`;
       msg += `\n\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento (Pix), por favor? 🙏`;
