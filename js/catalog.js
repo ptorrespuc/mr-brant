@@ -732,6 +732,9 @@ async function checkoutPay(pay) {
   const label = activeBtn.textContent; activeBtn.textContent = 'Processando…';
   try {
     const items = state.cart.map((it) => ({ size_id: it.sizeId, qty: it.qty }));
+    // resumo capturado antes de limpar a sacola (para a mensagem do WhatsApp)
+    const waItems = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
+    const waSubtotal = cartSubtotal();
     const customer = { email: c.email, name: c.name, phone: c.phone };
     const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
     const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay } });
@@ -742,8 +745,13 @@ async function checkoutPay(pay) {
 
     if (pay === 'whatsapp') {
       const link = `${siteBase()}?pedido=${data.token}`;
-      let msg = `Olá! Fiz o pedido *${data.number}* no site da Mr.Brant.\n`;
-      msg += `\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento, por favor? 🙏`;
+      let msg = `Olá! Fiz o pedido *${data.number}* na Mr.Brant.\n\n*Itens:*`;
+      waItems.forEach(({ p, size, qty }) => { msg += `\n• ${p.name} — ${sizeLabel(size)} — ${qty}x — ${brl(size.price_cents * qty)}`; });
+      msg += `\n\nFrete: ${state.shipCents ? `${state.shipMethod || 'Frete'} — ${brl(state.shipCents)}` : 'a combinar'}`;
+      msg += `\n*Total:* ${brl(waSubtotal + (state.shipCents || 0))}`;
+      const addr = [c.street && `${c.street}, ${c.number || ''}`, c.district, c.city && `${c.city}/${c.state || ''}`, c.cep].filter(Boolean).join(' · ');
+      if (addr) msg += `\n\nEntrega: ${addr}`;
+      msg += `\n\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento (Pix), por favor? 🙏`;
       window.open(waLink(msg), '_blank');
       state.trackToken = data.token;
       go('tracking');
