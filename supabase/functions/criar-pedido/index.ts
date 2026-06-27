@@ -16,7 +16,7 @@ const json = (b: unknown, s = 200) =>
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
   try {
-    const { items, customer, shipping, origin, pay } = await req.json();
+    const { items, customer, shipping, origin, pay, coupon } = await req.json();
 
     if (!Array.isArray(items) || !items.length) return json({ error: 'Sem itens.' }, 400);
     if (!customer?.email) return json({ error: 'E-mail é obrigatório.' }, 400);
@@ -54,7 +54,10 @@ Deno.serve(async (req) => {
     }
 
     const shippingCents = Math.max(0, parseInt(shipping?.price_cents, 10) || 0);
-    const total = subtotal + shippingCents;
+
+    // cupom (revalidado no servidor; desconto nunca maior que o subtotal)
+    const { code: couponCode, discount } = await evalCoupon(admin, coupon, subtotal);
+    const total = subtotal - discount + shippingCents;
 
     // upsert do cliente
     await admin.from('customers').upsert({
@@ -77,6 +80,8 @@ Deno.serve(async (req) => {
       shipping_method: shipping?.method || null,
       shipping_price_cents: shippingCents,
       subtotal_cents: subtotal,
+      discount_cents: discount,
+      coupon_code: discount > 0 ? couponCode : null,
       total_cents: total,
     }).select('id, number, token').single();
     if (ordErr) throw ordErr;
@@ -101,14 +106,20 @@ Deno.serve(async (req) => {
     if (!mpToken) return json({ error: 'Mercado Pago não configurado.' }, 500);
 
     const site = (origin || Deno.env.get('SITE_URL') || '').replace(/\/$/, '');
-    const mpItems = orderItems.map((oi) => ({
-      title: `${oi.product_name}${oi.size_label ? ' — ' + oi.size_label : ''}`,
-      quantity: oi.qty,
-      unit_price: oi.unit_price_cents / 100,
-      currency_id: 'BRL',
-    }));
-    if (shippingCents > 0) {
-      mpItems.push({ title: `Frete${shipping?.method ? ' — ' + shipping.method : ''}`, quantity: 1, unit_price: shippingCents / 100, currency_id: 'BRL' });
+    let mpItems: any[];
+    if (discount > 0) {
+      // com desconto, envia um item único com o total final (garante o valor cobrado)
+      mpItems = [{ title: `Pedido ${order.number} (com cupom ${couponCode})`, quantity: 1, unit_price: total / 100, currency_id: 'BRL' }];
+    } else {
+      mpItems = orderItems.map((oi) => ({
+        title: `${oi.product_name}${oi.size_label ? ' — ' + oi.size_label : ''}`,
+        quantity: oi.qty,
+        unit_price: oi.unit_price_cents / 100,
+        currency_id: 'BRL',
+      }));
+      if (shippingCents > 0) {
+        mpItems.push({ title: `Frete${shipping?.method ? ' — ' + shipping.method : ''}`, quantity: 1, unit_price: shippingCents / 100, currency_id: 'BRL' });
+      }
     }
 
     const isHttps = site.startsWith('https://');
@@ -149,6 +160,20 @@ Deno.serve(async (req) => {
     return json({ error: String((err as any)?.message || err) }, 500);
   }
 });
+
+// avalia um cupom (mesma lógica da função validar-cupom)
+async function evalCoupon(admin: any, code: string, subtotal: number) {
+  const c = (code || '').trim().toUpperCase();
+  if (!c) return { code: '', discount: 0 };
+  const { data: coupon } = await admin.from('coupons').select('*').eq('code', c).maybeSingle();
+  if (!coupon || !coupon.active) return { code: '', discount: 0 };
+  const today = new Date().toISOString().slice(0, 10);
+  if (coupon.valid_from && today < coupon.valid_from) return { code: '', discount: 0 };
+  if (coupon.valid_until && today > coupon.valid_until) return { code: '', discount: 0 };
+  let discount = coupon.type === 'percent' ? Math.round((subtotal * coupon.value) / 100) : coupon.value;
+  discount = Math.max(0, Math.min(discount, subtotal));
+  return { code: c, discount };
+}
 
 // e-mail "pedido recebido" (combinaremos o pagamento pelo WhatsApp)
 async function sendOrderReceivedEmail(o: any) {

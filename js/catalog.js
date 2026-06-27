@@ -18,6 +18,7 @@ const state = {
   screen: 'home', catSlug: 'imagens', sub: 'Todas', prodId: null,
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
   checkout: loadCheckout(), shipMethod: null, shipCents: null, trackToken: null,
+  coupon: { code: '', discount: 0 },
 };
 function loadCheckout() { try { return JSON.parse(localStorage.getItem('mrbrant_checkout')) || {}; } catch (e) { return {}; } }
 function saveCheckout() { try { localStorage.setItem('mrbrant_checkout', JSON.stringify(state.checkout)); } catch (e) {} }
@@ -570,6 +571,11 @@ function renderCheckout() {
             <div style="display:flex;flex-direction:column;gap:8px;font-size:14px;">
               ${lines.map((l) => `<div style="display:flex;justify-content:space-between;gap:10px;"><span style="color:var(--muted);">${esc(l.p.name)} · ${esc(sizeLabel(l.size))} · ${l.qty}x</span><span>${brl(l.size.price_cents * l.qty)}</span></div>`).join('')}
             </div>
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <input id="ck_coupon" placeholder="Cupom de desconto" value="${esc(state.coupon.code)}" style="flex:1;text-transform:uppercase;padding:9px 12px;font-size:13px;">
+              <button id="ck_couponBtn" class="btn-out" style="padding:9px 16px;">Aplicar</button>
+            </div>
+            <div id="ck_couponMsg" style="font-size:12px;margin-top:6px;"></div>
             <div id="ck_summary" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;"></div>
             <div style="margin-top:18px;">${stepHead(4, 'Pagamento')}</div>
             <div style="margin-top:4px;">
@@ -603,6 +609,7 @@ function renderCheckout() {
     ckUpdate();
   });
 
+  $('#ck_couponBtn').onclick = applyCoupon;
   $('#ck_payMp').onclick = () => checkoutPay('mp');
   $('#ck_payWa').onclick = () => checkoutPay('whatsapp');
   if (c.street) lockAddrFields();
@@ -647,10 +654,34 @@ function updateCheckoutSummary() {
   if (!el) return;
   const subtotal = cartSubtotal();
   const ship = state.shipCents;
+  const disc = state.coupon.discount || 0;
+  const total = Math.max(0, subtotal - disc) + (ship || 0);
   el.innerHTML = `
     <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Subtotal</span><span>${brl(subtotal)}</span></div>
+    ${disc > 0 ? `<div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;color:var(--green);"><span>Desconto${state.coupon.code ? ' (' + esc(state.coupon.code) + ')' : ''}</span><span>− ${brl(disc)}</span></div>` : ''}
     <div style="display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px;"><span>Frete${state.shipMethod ? ' (' + esc(state.shipMethod) + ')' : ''}</span><span>${ship == null ? '—' : brl(ship)}</span></div>
-    <div style="display:flex;justify-content:space-between;font-weight:600;font-size:16px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;"><span>Total</span><span style="color:var(--gold);">${brl(subtotal + (ship || 0))}</span></div>`;
+    <div style="display:flex;justify-content:space-between;font-weight:600;font-size:16px;border-top:1px solid var(--line);margin-top:8px;padding-top:8px;"><span>Total</span><span style="color:var(--gold);">${brl(total)}</span></div>`;
+}
+
+async function applyCoupon() {
+  const msg = $('#ck_couponMsg');
+  const code = ($('#ck_coupon').value || '').trim().toUpperCase();
+  state.coupon = { code: '', discount: 0 };
+  if (!code) { msg.textContent = ''; updateCheckoutSummary(); return; }
+  msg.style.color = 'var(--muted)'; msg.textContent = 'Validando…';
+  try {
+    const { data, error } = await sb.functions.invoke('validar-cupom', { body: { code, subtotal_cents: cartSubtotal() } });
+    if (error) throw error;
+    if (data.valid) {
+      state.coupon = { code: data.code, discount: data.discount };
+      msg.style.color = 'var(--green)'; msg.textContent = `${data.message} − ${brl(data.discount)}`;
+    } else {
+      msg.style.color = 'var(--red)'; msg.textContent = data.message || 'Cupom inválido.';
+    }
+  } catch (e) {
+    msg.style.color = 'var(--red)'; msg.textContent = 'Não foi possível validar o cupom.';
+  }
+  updateCheckoutSummary();
 }
 
 // retorna true se encontrou o endereço
@@ -737,7 +768,7 @@ async function checkoutPay(pay) {
     const waSubtotal = cartSubtotal();
     const customer = { email: c.email, name: c.name, phone: c.phone };
     const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
-    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay } });
+    const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay, coupon: state.coupon.code } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
 
@@ -747,8 +778,9 @@ async function checkoutPay(pay) {
       const link = `${siteBase()}?pedido=${data.token}`;
       let msg = `Olá! Fiz o pedido *${data.number}* na Mr.Brant.\n\n*Itens:*`;
       waItems.forEach(({ p, size, qty }) => { msg += `\n• ${p.name} — ${sizeLabel(size)} — ${qty}x — ${brl(size.price_cents * qty)}`; });
-      msg += `\n\nFrete: ${state.shipCents ? `${state.shipMethod || 'Frete'} — ${brl(state.shipCents)}` : 'a combinar'}`;
-      msg += `\n*Total:* ${brl(waSubtotal + (state.shipCents || 0))}`;
+      if (state.coupon.discount > 0) msg += `\n\nDesconto (${state.coupon.code}): − ${brl(state.coupon.discount)}`;
+      msg += `\n${state.coupon.discount > 0 ? '' : '\n'}Frete: ${state.shipCents ? `${state.shipMethod || 'Frete'} — ${brl(state.shipCents)}` : 'a combinar'}`;
+      msg += `\n*Total:* ${brl(Math.max(0, waSubtotal - (state.coupon.discount || 0)) + (state.shipCents || 0))}`;
       const addr = [c.street && `${c.street}, ${c.number || ''}`, c.district, c.city && `${c.city}/${c.state || ''}`, c.cep].filter(Boolean).join(' · ');
       if (addr) msg += `\n\nEntrega: ${addr}`;
       msg += `\n\nAcompanhar: ${link}\n\nPodem confirmar e combinar o pagamento (Pix), por favor? 🙏`;

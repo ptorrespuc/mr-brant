@@ -88,6 +88,7 @@
     <span class="muted">Admin</span>
     <span class="spacer"></span>
     <button id="boxesBtn" class="btn">📏 Tamanhos</button>
+    <button id="couponsBtn" class="btn">🎟 Cupons</button>
     <button id="ordersBtn" class="btn">📦 Pedidos</button>
     <button id="settingsBtn" class="btn">⚙ Configurações</button>
     <button id="newBtn" class="btn gold">+ Nova imagem</button>
@@ -112,6 +113,18 @@
       </div>
       <p class="muted" style="margin-bottom:16px;">Cada tamanho é uma caixa com dimensões e peso padrão. Ao cadastrar uma imagem, você escolhe o tamanho e só informa o peso (já vem preenchido com o padrão).</p>
       <div id="boxesList"></div>
+    </div>
+
+    <!-- CUPONS -->
+    <div id="couponsView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <button id="couponsBack" class="btn sm">← Voltar</button>
+        <h2>Cupons</h2>
+        <span class="spacer" style="flex:1;"></span>
+        <button id="couponAdd" class="btn gold">+ Novo cupom</button>
+      </div>
+      <p class="muted" style="margin-bottom:16px;">Crie códigos de desconto (percentual ou valor fixo) com período de validade. O valor fixo nunca passa do subtotal do pedido.</p>
+      <div id="couponsList"></div>
     </div>
 
     <!-- PEDIDOS -->
@@ -321,7 +334,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625h"></script>
-<script src="js/admin.js?v=20260625h"></script>
+<script src="js/config.js?v=20260625i"></script>
+<script src="js/admin.js?v=20260625i"></script>
 </body>
 </html>

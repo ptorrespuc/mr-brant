@@ -65,7 +65,86 @@ async function enterApp() {
 // ---------- PEDIDOS ----------
 const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'enviado', 'entregue', 'cancelado'];
 const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView'].forEach((v) => hide($(v))); }
+function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'couponsView'].forEach((v) => hide($(v))); }
+
+// ---------- CUPONS ----------
+$('couponsBtn').onclick = openCoupons;
+$('couponsBack').onclick = () => { hide($('couponsView')); show($('listView')); };
+$('couponAdd').onclick = () => addCouponRow({});
+
+async function openCoupons() {
+  hideAllViews(); show($('couponsView'));
+  window.scrollTo(0, 0);
+  const { data, error } = await sb.from('coupons').select('*').order('created_at', { ascending: false });
+  $('couponsList').innerHTML = '';
+  if (error) { $('couponsList').innerHTML = '<p class="muted">Erro ao carregar. (Rodou o cupons.sql?)</p>'; return; }
+  if (!data.length) $('couponsList').innerHTML = '<p class="muted">Nenhum cupom ainda. Clique em "+ Novo cupom".</p>';
+  (data || []).forEach((c) => addCouponRow(c));
+}
+
+function addCouponRow(c) {
+  if ($('couponsList').querySelector('.muted')) $('couponsList').innerHTML = '';
+  const v = (x) => (x == null ? '' : x);
+  const isPercent = (c.type || 'percent') === 'percent';
+  const valueShown = c.value == null ? '' : (c.type === 'fixed' ? (c.value / 100).toFixed(2) : c.value);
+  const row = document.createElement('div');
+  row.className = 'card';
+  row.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;';
+  row.dataset.id = c.id || '';
+  row.innerHTML = `
+    <div class="field" style="flex:1;min-width:120px;margin:0;"><label>Código</label><input class="c-code" value="${v(c.code)}" placeholder="BEMVINDO10" style="text-transform:uppercase;"></div>
+    <div class="field" style="flex:0 0 130px;margin:0;"><label>Tipo</label>
+      <select class="c-type"><option value="percent" ${isPercent ? 'selected' : ''}>Percentual (%)</option><option value="fixed" ${!isPercent ? 'selected' : ''}>Valor fixo (R$)</option></select>
+    </div>
+    <div class="field" style="flex:0 0 110px;margin:0;"><label>Valor</label><input class="c-value" type="number" step="0.01" value="${valueShown}" placeholder="${isPercent ? '10' : '20,00'}"></div>
+    <div class="field" style="flex:0 0 140px;margin:0;"><label>Válido de</label><input class="c-from" type="date" value="${v(c.valid_from)}"></div>
+    <div class="field" style="flex:0 0 140px;margin:0;"><label>Válido até</label><input class="c-until" type="date" value="${v(c.valid_until)}"></div>
+    <label style="display:flex;align-items:center;gap:6px;margin:0 0 10px;text-transform:none;"><input class="c-active" type="checkbox" style="width:auto;" ${c.active === false ? '' : 'checked'}> ativo</label>
+    <button class="btn gold sm c-save" type="button">Salvar</button>
+    <button class="btn danger sm c-del" type="button">Excluir</button>`;
+  row.querySelector('.c-save').onclick = () => saveCoupon(row);
+  row.querySelector('.c-del').onclick = () => deleteCoupon(row);
+  $('couponsList').appendChild(row);
+}
+
+async function saveCoupon(row) {
+  const code = row.querySelector('.c-code').value.trim().toUpperCase();
+  if (!code) { toast('Informe o código'); return; }
+  const type = row.querySelector('.c-type').value;
+  const raw = parseFloat(row.querySelector('.c-value').value.replace(',', '.'));
+  if (!Number.isFinite(raw) || raw <= 0) { toast('Informe um valor válido'); return; }
+  if (type === 'percent' && raw > 100) { toast('Percentual máximo é 100'); return; }
+  const value = type === 'fixed' ? Math.round(raw * 100) : Math.round(raw);
+  const payload = {
+    code, type, value,
+    valid_from: row.querySelector('.c-from').value || null,
+    valid_until: row.querySelector('.c-until').value || null,
+    active: row.querySelector('.c-active').checked,
+  };
+  show($('loader'));
+  try {
+    if (row.dataset.id) {
+      const { error } = await sb.from('coupons').update(payload).eq('id', row.dataset.id);
+      if (error) throw error;
+    } else {
+      const { data, error } = await sb.from('coupons').insert(payload).select('id').single();
+      if (error) throw error;
+      row.dataset.id = data.id;
+    }
+    hide($('loader')); toast('Cupom salvo');
+  } catch (e) { hide($('loader')); toast('Erro: ' + (e.message || e)); }
+}
+
+async function deleteCoupon(row) {
+  if (!row.dataset.id) { row.remove(); return; }
+  if (!confirm('Excluir este cupom?')) return;
+  show($('loader'));
+  const { error } = await sb.from('coupons').delete().eq('id', row.dataset.id);
+  hide($('loader'));
+  if (error) { toast('Erro ao excluir: ' + error.message); return; }
+  row.remove();
+  toast('Cupom excluído');
+}
 
 // ---------- TAMANHOS (caixas) ----------
 $('boxesBtn').onclick = openBoxSizes;
@@ -263,6 +342,7 @@ async function openOrder(id) {
     <div class="card">
       <h3 style="font-size:16px;margin-bottom:10px;">Itens</h3>
       ${(o.order_items || []).map((i) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line);"><span>${i.product_name}${i.size_label ? ' · ' + i.size_label : ''} · ${i.qty}x</span><span style="color:var(--gold);">${brl(i.line_total_cents)}</span></div>`).join('')}
+      ${o.discount_cents ? `<div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--green);"><span>Desconto${o.coupon_code ? ' (' + o.coupon_code + ')' : ''}</span><span>− ${brl(o.discount_cents)}</span></div>` : ''}
       <div style="display:flex;justify-content:space-between;margin-top:8px;color:var(--muted);"><span>Frete${o.shipping_method ? ' (' + o.shipping_method + ')' : ''}</span><span>${brl(o.shipping_price_cents)}</span></div>
       <div style="display:flex;justify-content:space-between;margin-top:6px;font-weight:600;"><span>Total</span><span style="color:var(--gold);">${brl(o.total_cents)}</span></div>
       <p class="muted" style="font-size:12px;margin-top:8px;">Pagamento: ${o.payment_method || '—'} · ID: ${o.payment_id || '—'}</p>
