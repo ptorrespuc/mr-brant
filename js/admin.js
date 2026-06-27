@@ -144,6 +144,8 @@ $('orderBack').onclick = () => { hide($('orderView')); openOrders(); };
 
 const PAID_STATUS = ['pago', 'enviado', 'entregue'];
 let ordersPeriod = '30'; // período selecionado
+let ordersStatus = 'confirmados'; // filtro de status da lista
+let lastOrders = []; // pedidos do período carregados
 
 function periodRange(period) {
   const now = new Date();
@@ -176,7 +178,42 @@ async function openOrders() {
       loadOrders(periodRange(ordersPeriod));
     };
   });
+  $$('#statusBtns [data-status]').forEach((b) => {
+    b.onclick = () => {
+      ordersStatus = b.dataset.status;
+      $$('#statusBtns [data-status]').forEach((x) => x.classList.toggle('gold', x === b));
+      renderOrdersList();
+    };
+  });
   loadOrders(periodRange(ordersPeriod));
+}
+
+function statusMatch(o) {
+  if (ordersStatus === 'todos') return true;
+  if (ordersStatus === 'confirmados') return PAID_STATUS.includes(o.status);
+  return o.status === ordersStatus;
+}
+
+function renderOrdersList() {
+  const list = $('ordersList');
+  const filtered = lastOrders.filter(statusMatch);
+  if (!filtered.length) {
+    list.innerHTML = '';
+    const labels = { confirmados: 'confirmado', pendente: 'pendente', cancelado: 'cancelado', todos: '' };
+    $('ordersEmpty').textContent = `Nenhum pedido ${labels[ordersStatus] || ''} neste período.`.replace('  ', ' ');
+    show($('ordersEmpty'));
+    return;
+  }
+  hide($('ordersEmpty'));
+  list.innerHTML = filtered.map((o) => `
+    <div class="card" data-order="${o.id}" style="cursor:pointer;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:600;">${o.number || '—'} <span class="badge">${o.status}</span></div>
+        <div class="muted" style="font-size:13px;">${o.customer_name || ''} · ${o.customer_email} · ${new Date(o.created_at).toLocaleString('pt-BR')}</div>
+      </div>
+      <div style="color:var(--gold);font-weight:600;">${brl(o.total_cents)}</div>
+    </div>`).join('');
+  list.querySelectorAll('[data-order]').forEach((el) => el.onclick = () => openOrder(el.dataset.order));
 }
 
 async function loadOrders(range) {
@@ -189,6 +226,7 @@ async function loadOrders(range) {
   if (range && range.to) q = q.lte('created_at', range.to);
   const { data, error } = await q;
   if (error) { list.innerHTML = `<p class="muted">Erro ao carregar pedidos. (Rodou o pedidos.sql?)</p>`; return; }
+  lastOrders = data;
 
   // KPIs
   const paid = data.filter((o) => PAID_STATUS.includes(o.status));
@@ -207,18 +245,7 @@ async function loadOrders(range) {
     kpi('Ticket médio', brl(ticket), 'por pedido pago') +
     kpi('A receber', brl(pendente), 'aguardando pagamento');
 
-  // lista
-  if (!data.length) { list.innerHTML = ''; show($('ordersEmpty')); return; }
-  hide($('ordersEmpty'));
-  list.innerHTML = data.map((o) => `
-    <div class="card" data-order="${o.id}" style="cursor:pointer;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;">
-      <div>
-        <div style="font-weight:600;">${o.number || '—'} <span class="badge">${o.status}</span></div>
-        <div class="muted" style="font-size:13px;">${o.customer_name || ''} · ${o.customer_email} · ${new Date(o.created_at).toLocaleString('pt-BR')}</div>
-      </div>
-      <div style="color:var(--gold);font-weight:600;">${brl(o.total_cents)}</div>
-    </div>`).join('');
-  list.querySelectorAll('[data-order]').forEach((el) => el.onclick = () => openOrder(el.dataset.order));
+  renderOrdersList();
 }
 
 async function openOrder(id) {

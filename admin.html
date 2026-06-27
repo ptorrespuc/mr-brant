@@ -137,7 +137,13 @@
 
       <div id="ordersKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:18px;"></div>
 
-      <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Pedidos no período</h3>
+      <div id="statusBtns" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center;">
+        <span style="font-size:13px;color:var(--muted);margin-right:4px;">Mostrar:</span>
+        <button class="btn sm gold" data-status="confirmados">Confirmados</button>
+        <button class="btn sm" data-status="pendente">Pendentes</button>
+        <button class="btn sm" data-status="cancelado">Cancelados</button>
+        <button class="btn sm" data-status="todos">Todos</button>
+      </div>
       <div id="ordersList"></div>
       <p id="ordersEmpty" class="muted hidden">Nenhum pedido no período.</p>
     </div>
@@ -314,7 +320,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625e"></script>
-<script src="js/admin.js?v=20260625e"></script>
+<script src="js/config.js?v=20260625f"></script>
+<script src="js/admin.js?v=20260625f"></script>
 </body>
 </html>
