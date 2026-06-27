@@ -85,7 +85,7 @@ Deno.serve(async (req) => {
 
     // Finalização pelo WhatsApp: pedido já gravado, sem pagamento online
     if (payMethod === 'whatsapp') {
-      await admin.from('orders').update({ payment_method: 'whatsapp' }).eq('id', order.id);
+      await admin.from('orders').update({ payment_method: 'whatsapp', status: 'negociando' }).eq('id', order.id);
       const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
       const site = (origin || '').replace(/\/$/, '');
       await sendOrderReceivedEmail({

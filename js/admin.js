@@ -63,7 +63,7 @@ async function enterApp() {
 }
 
 // ---------- PEDIDOS ----------
-const ORDER_STATUS = ['pendente', 'pago', 'enviado', 'entregue', 'cancelado'];
+const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'enviado', 'entregue', 'cancelado'];
 const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView'].forEach((v) => hide($(v))); }
 
@@ -199,7 +199,7 @@ function renderOrdersList() {
   const filtered = lastOrders.filter(statusMatch);
   if (!filtered.length) {
     list.innerHTML = '';
-    const labels = { confirmados: 'confirmado', pendente: 'pendente', cancelado: 'cancelado', todos: '' };
+    const labels = { confirmados: 'confirmado', negociando: 'em negociação', pendente: 'pendente', cancelado: 'cancelado', todos: '' };
     $('ordersEmpty').textContent = `Nenhum pedido ${labels[ordersStatus] || ''} neste período.`.replace('  ', ' ');
     show($('ordersEmpty'));
     return;

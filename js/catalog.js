@@ -573,11 +573,11 @@ function renderCheckout() {
             <div id="ck_summary" style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px;"></div>
             <div style="margin-top:18px;">${stepHead(4, 'Pagamento')}</div>
             <div style="margin-top:4px;">
-              <button id="ck_payMp" class="btn-gold" style="width:100%;padding:14px;">Pagar com cartão ou Pix</button>
-              <button id="ck_payWa" class="btn-out" style="width:100%;padding:13px;margin-top:10px;justify-content:center;gap:8px;">Combinar pelo WhatsApp</button>
+              <button id="ck_payMp" class="btn-gold" style="width:100%;padding:14px;">Pagar com cartão</button>
+              <button id="ck_payWa" class="btn-out" style="width:100%;padding:13px;margin-top:10px;justify-content:center;gap:8px;">Pix ou combinar pelo WhatsApp</button>
             </div>
             <div id="ck_hint" class="muted" style="font-size:12px;margin-top:10px;text-align:center;"></div>
-            <p class="muted" style="font-size:12px;margin-top:8px;text-align:center;">Pagamento seguro via Mercado Pago — Pix, boleto ou cartão.</p>
+            <p class="muted" style="font-size:12px;margin-top:8px;text-align:center;">Cartão de crédito via Mercado Pago. Para Pix, combine pelo WhatsApp.</p>
             <div id="ck_err" style="color:var(--red);font-size:13px;margin-top:10px;"></div>
           </div>
         </div>
@@ -762,7 +762,7 @@ async function checkoutPay(pay) {
 }
 
 // ---------- ACOMPANHAMENTO ----------
-const STATUS_LABEL = { pendente: 'Aguardando pagamento', pago: 'Pago', cancelado: 'Cancelado', enviado: 'Enviado', entregue: 'Entregue' };
+const STATUS_LABEL = { pendente: 'Aguardando pagamento', negociando: 'Em negociação pelo WhatsApp', pago: 'Pago', cancelado: 'Cancelado', enviado: 'Enviado', entregue: 'Entregue' };
 
 function renderTracking() {
   if (state.trackToken) return fetchAndShowOrder({ token: state.trackToken });

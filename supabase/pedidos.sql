@@ -20,7 +20,7 @@ create table if not exists orders (
   number          text unique,
   token           text unique not null default gen_random_uuid()::text,
   status          text not null default 'pendente'
-                  check (status in ('pendente','pago','cancelado','enviado','entregue')),
+                  check (status in ('pendente','negociando','pago','cancelado','enviado','entregue')),
 
   customer_email  text not null,
   customer_name   text,
