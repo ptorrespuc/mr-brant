@@ -88,24 +88,25 @@ Deno.serve(async (req) => {
 
     await admin.from('order_items').insert(orderItems.map((oi) => ({ ...oi, order_id: order.id })));
 
+    const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
+    const resendFrom = fromCfg?.value;
+    const site = (origin || Deno.env.get('SITE_URL') || '').replace(/\/$/, '');
+    const trackLink = site ? `${site}/?pedido=${order.token}` : '';
+    const emailBase = { to: customer.email, name: customer.name, number: order.number, items: orderItems, shippingCents, discount, total, shippingMethod: shipping?.method, from: resendFrom, link: trackLink };
+
     // Finalização pelo WhatsApp: pedido já gravado, sem pagamento online
     if (payMethod === 'whatsapp') {
       await admin.from('orders').update({ payment_method: 'whatsapp', status: 'negociando' }).eq('id', order.id);
-      const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
-      const site = (origin || '').replace(/\/$/, '');
-      await sendOrderReceivedEmail({
-        to: customer.email, name: customer.name, number: order.number,
-        items: orderItems, shippingCents, total, shippingMethod: shipping?.method,
-        from: fromCfg?.value, link: site ? `${site}/?pedido=${order.token}` : '',
-      });
+      await sendOrderReceivedEmail({ ...emailBase, mode: 'whatsapp' });
       return json({ number: order.number, token: order.token, pay: 'whatsapp' });
     }
+
+    // pagamento por cartão: notifica o cliente ANTES de ir ao Mercado Pago
+    await sendOrderReceivedEmail({ ...emailBase, mode: 'card' });
 
     // cria a preferência no Mercado Pago
     const mpToken = Deno.env.get('MP_ACCESS_TOKEN');
     if (!mpToken) return json({ error: 'Mercado Pago não configurado.' }, 500);
-
-    const site = (origin || Deno.env.get('SITE_URL') || '').replace(/\/$/, '');
     let mpItems: any[];
     if (discount > 0) {
       // com desconto, envia um item único com o total final (garante o valor cobrado)
@@ -176,7 +177,7 @@ async function evalCoupon(admin: any, code: string, subtotal: number, shipping: 
   return { code: c, discount };
 }
 
-// e-mail "pedido recebido" (combinaremos o pagamento pelo WhatsApp)
+// e-mail "pedido recebido" (modo 'card' = aguardando pagamento | 'whatsapp' = combinar)
 async function sendOrderReceivedEmail(o: any) {
   const key = Deno.env.get('RESEND_API_KEY');
   const from = o.from || Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
@@ -184,23 +185,30 @@ async function sendOrderReceivedEmail(o: any) {
   const brl = (c: number) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
   const rows = (o.items || []).map((i: any) =>
     `<tr><td style="padding:6px 0;">${i.product_name}${i.size_label ? ' — ' + i.size_label : ''} (${i.qty}x)</td><td style="text-align:right;">${brl(i.line_total_cents)}</td></tr>`).join('');
+  const closing = o.mode === 'card'
+    ? 'Assim que o pagamento for confirmado, avisamos por e-mail e começamos a preparar a sua peça. Se não concluiu o pagamento, use o link abaixo para retomar.'
+    : 'Vamos combinar o pagamento e a entrega pelo WhatsApp. Até já!';
   const html = `
     <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1d160d;">
       <h2 style="color:#9c7322;">Recebemos o seu pedido — Mr.Brant</h2>
       <p>Olá ${o.name || ''}, registramos o seu pedido <strong>${o.number}</strong>. 🙏</p>
       <table style="width:100%;border-collapse:collapse;margin:14px 0;">${rows}
+        ${o.discount ? `<tr><td style="padding-top:8px;color:#15683a;">Desconto</td><td style="text-align:right;padding-top:8px;color:#15683a;">− ${brl(o.discount)}</td></tr>` : ''}
         <tr><td style="padding-top:8px;">Frete${o.shippingMethod ? ' (' + o.shippingMethod + ')' : ''}</td><td style="text-align:right;padding-top:8px;">${brl(o.shippingCents)}</td></tr>
         <tr><td style="padding-top:8px;font-weight:bold;">Total</td><td style="text-align:right;padding-top:8px;font-weight:bold;">${brl(o.total)}</td></tr>
       </table>
-      <p>Vamos combinar o pagamento e a entrega pelo WhatsApp. Até já!</p>
-      ${o.link ? `<p><a href="${o.link}" style="color:#9c7322;">Acompanhar meu pedido</a></p>` : ''}
+      <p>${closing}</p>
+      ${o.link ? `<p><a href="${o.link}" style="display:inline-block;background:#9c7322;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;">Acompanhar meu pedido</a></p><p style="font-size:12px;color:#6f6450;">Ou acesse: ${o.link}</p>` : ''}
       <p style="color:#6f6450;font-size:13px;">Mr.Brant — Artigos Religiosos</p>
     </div>`;
+  const subject = o.mode === 'card'
+    ? `Pedido ${o.number} recebido (aguardando pagamento) — Mr.Brant`
+    : `Pedido ${o.number} recebido — Mr.Brant`;
   try {
     await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: o.to, subject: `Pedido ${o.number} recebido — Mr.Brant`, html }),
+      body: JSON.stringify({ from, to: o.to, subject, html }),
     });
   } catch (_) { /* não bloqueia o pedido se o e-mail falhar */ }
 }

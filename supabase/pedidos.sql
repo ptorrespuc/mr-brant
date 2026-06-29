@@ -96,5 +96,6 @@ create policy "admin read customers" on customers   for select using (auth.role(
 -- Configurações do pagamento e e-mail
 insert into settings (key, value) values
   ('mp_sandbox', 'true'),  -- 'true' = credenciais de teste do Mercado Pago
-  ('resend_from', 'Mr.Brant <onboarding@resend.dev>')  -- remetente dos e-mails
+  ('resend_from', 'Mr.Brant <onboarding@resend.dev>'),  -- remetente dos e-mails
+  ('site_url', 'https://mrbrant.com.br')  -- usada nos links dos e-mails
 on conflict (key) do nothing;

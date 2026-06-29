@@ -48,8 +48,12 @@ Deno.serve(async (req) => {
 
     // e-mail de confirmação só quando aprovado
     if (order && newStatus === 'pago') {
-      const { data: fromCfg } = await admin.from('settings').select('value').eq('key', 'resend_from').maybeSingle();
-      await sendEmail(order, fromCfg?.value);
+      const { data: cfg } = await admin.from('settings').select('key, value').in('key', ['resend_from', 'site_url']);
+      const map: Record<string, string> = {};
+      (cfg || []).forEach((r: any) => { map[r.key] = r.value; });
+      const base = (map.site_url || '').replace(/\/$/, '');
+      const link = base ? `${base}/?pedido=${order.token}` : '';
+      await sendEmail(order, map.resend_from, link);
     }
 
     return new Response('ok', { status: 200 });
@@ -59,7 +63,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function sendEmail(order: any, fromCfg?: string) {
+async function sendEmail(order: any, fromCfg?: string, link?: string) {
   const key = Deno.env.get('RESEND_API_KEY');
   const from = fromCfg || Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
   if (!key) return;
@@ -78,6 +82,7 @@ async function sendEmail(order: any, fromCfg?: string) {
         <tr><td style="padding-top:8px;font-weight:bold;">Total</td><td style="text-align:right;padding-top:8px;font-weight:bold;">${brl(order.total_cents)}</td></tr>
       </table>
       <p>Já estamos preparando a sua peça. Em breve enviamos o código de rastreio.</p>
+      ${link ? `<p><a href="${link}" style="display:inline-block;background:#9c7322;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;">Acompanhar meu pedido</a></p><p style="font-size:12px;color:#6f6450;">Ou acesse: ${link}</p>` : ''}
       <p style="color:#6f6450;font-size:13px;">Mr.Brant — Artigos Religiosos</p>
     </div>`;
 

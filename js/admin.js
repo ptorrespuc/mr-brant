@@ -403,6 +403,7 @@ async function openSettings() {
   $('s_frete_empresas').value = map.frete_empresas || '';
   $('s_mp_sandbox').checked = (map.mp_sandbox || 'true') === 'true';
   $('s_resend_from').value = map.resend_from || '';
+  $('s_site_url').value = map.site_url || '';
 }
 
 $('settingsSave').onclick = async () => {
@@ -423,6 +424,7 @@ $('settingsSave').onclick = async () => {
       { key: 'frete_empresas', value: $('s_frete_empresas').value.trim() },
       { key: 'mp_sandbox', value: $('s_mp_sandbox').checked ? 'true' : 'false' },
       { key: 'resend_from', value: $('s_resend_from').value.trim() },
+      { key: 'site_url', value: $('s_site_url').value.trim() },
     ];
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
     if (error) throw error;
