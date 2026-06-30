@@ -59,9 +59,11 @@ Deno.serve(async (req) => {
     const { code: couponCode, discount } = await evalCoupon(admin, coupon, subtotal, shippingCents);
     const total = subtotal - discount + shippingCents;
 
+    const cpf = (customer.cpf || '').replace(/\D/g, '') || null;
+
     // upsert do cliente
     await admin.from('customers').upsert({
-      email: customer.email, name: customer.name || null, phone: customer.phone || null, updated_at: new Date().toISOString(),
+      email: customer.email, name: customer.name || null, phone: customer.phone || null, cpf, updated_at: new Date().toISOString(),
     }, { onConflict: 'email' });
 
     // grava o pedido
@@ -70,6 +72,7 @@ Deno.serve(async (req) => {
       customer_email: customer.email,
       customer_name: customer.name || null,
       customer_phone: customer.phone || null,
+      customer_cpf: cpf,
       ship_cep: shipping?.cep || null,
       ship_street: shipping?.street || null,
       ship_number: shipping?.number || null,

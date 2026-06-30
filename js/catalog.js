@@ -179,6 +179,17 @@ function maskCep(el) {
     el.value = v;
   });
 }
+function maskCpf(el) {
+  if (!el) return;
+  el.addEventListener('input', () => {
+    let v = el.value.replace(/\D/g, '').slice(0, 11);
+    if (v.length > 9) v = `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`;
+    else if (v.length > 6) v = `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`;
+    else if (v.length > 3) v = `${v.slice(0, 3)}.${v.slice(3)}`;
+    el.value = v;
+    state.checkout.cpf = v; saveCheckout();
+  });
+}
 
 // busca produtos; se a tabela box_sizes ainda não existir, usa o formato antigo
 async function fetchProductsCatalog() {
@@ -641,6 +652,7 @@ function renderCheckout() {
             ${stepHead(1, 'Seus dados')}
             ${field('E-mail *', 'ck_email', c.email, { ph: 'voce@email.com', attr: 'type="email"' })}
             ${field('Nome completo *', 'ck_name', c.name)}
+            ${field('CPF *', 'ck_cpf', c.cpf, { ph: '000.000.000-00', attr: 'inputmode="numeric" maxlength="14"' })}
             ${field('WhatsApp', 'ck_phone', c.phone, { ph: '(21) 90000-0000' })}
           </div>
           <div class="card" style="${cardCss}">
@@ -693,10 +705,11 @@ function renderCheckout() {
     </div>`;
 
   // inputs simples → estado
-  ['email', 'name', 'phone', 'number', 'complement', 'street', 'district', 'city', 'state'].forEach((k) => {
+  ['email', 'name', 'phone', 'cpf', 'number', 'complement', 'street', 'district', 'city', 'state'].forEach((k) => {
     const el = $(`#ck_${k}`);
     if (el) el.addEventListener('input', () => { state.checkout[k] = el.value; saveCheckout(); ckUpdate(); });
   });
+  maskCpf($('#ck_cpf'));
 
   // CEP: busca endereço e calcula frete automaticamente
   const cepEl = $('#ck_cep');
@@ -737,8 +750,10 @@ function lockAddrFields() {
 
 function ckValid() {
   const c = state.checkout || {};
-  const dataOk = ['email', 'name', 'cep', 'number'].every((k) => (c[k] || '').trim());
-  return { ok: dataOk && state.shipCents != null, dataOk, freteOk: state.shipCents != null };
+  const filled = ['email', 'name', 'cep', 'number'].every((k) => (c[k] || '').trim());
+  const cpfOk = (c.cpf || '').replace(/\D/g, '').length === 11;
+  const dataOk = filled && cpfOk;
+  return { ok: dataOk && state.shipCents != null, dataOk, cpfOk, freteOk: state.shipCents != null };
 }
 function ckUpdate() {
   updateCheckoutSummary();
@@ -748,7 +763,7 @@ function ckUpdate() {
     if (b) { b.disabled = !v.ok; b.style.opacity = v.ok ? '1' : '.5'; b.style.cursor = v.ok ? 'pointer' : 'not-allowed'; }
   });
   const hint = $('#ck_hint');
-  if (hint) hint.textContent = v.ok ? '' : (!v.dataOk ? 'Preencha seus dados e o endereço (CEP e número).' : 'Escolha uma opção de frete.');
+  if (hint) hint.textContent = v.ok ? '' : (!v.dataOk ? (!v.cpfOk ? 'Preencha seus dados, incluindo um CPF válido.' : 'Preencha seus dados e o endereço (CEP e número).') : 'Escolha uma opção de frete.');
 }
 
 function updateCheckoutSummary() {
@@ -873,7 +888,7 @@ async function checkoutPay(pay) {
     // resumo capturado antes de limpar a sacola (para a mensagem do WhatsApp)
     const waItems = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
     const waSubtotal = cartSubtotal();
-    const customer = { email: c.email, name: c.name, phone: c.phone };
+    const customer = { email: c.email, name: c.name, phone: c.phone, cpf: (c.cpf || '').replace(/\D/g, '') };
     const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
     const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay, coupon: state.coupon.code } });
     if (error) throw error;

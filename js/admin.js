@@ -443,7 +443,7 @@ async function openOrder(id) {
   $('orderDetail').innerHTML = `
     <div class="card">
       <h3 style="font-size:16px;margin-bottom:10px;">Cliente</h3>
-      <p>${o.customer_name || ''} — ${o.customer_email}${o.customer_phone ? ' — ' + o.customer_phone : ''}</p>
+      <p>${o.customer_name || ''} — ${o.customer_email}${o.customer_phone ? ' — ' + o.customer_phone : ''}${o.customer_cpf ? ' — CPF: ' + o.customer_cpf : ''}</p>
       <p class="muted" style="margin-top:6px;">${addr || 'Sem endereço'}</p>
     </div>
     <div class="card">
