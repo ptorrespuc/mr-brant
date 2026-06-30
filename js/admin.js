@@ -65,7 +65,80 @@ async function enterApp() {
 // ---------- PEDIDOS ----------
 const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'enviado', 'entregue', 'cancelado'];
 const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'couponsView'].forEach((v) => hide($(v))); }
+function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'couponsView', 'visitsView'].forEach((v) => hide($(v))); }
+
+// ---------- VISITAS (analytics) ----------
+let visitsPeriod = '30';
+$('visitsBtn').onclick = openVisits;
+$('visitsBack').onclick = () => { hide($('visitsView')); show($('listView')); };
+$('vApply').onclick = () => {
+  visitsPeriod = 'custom';
+  document.querySelectorAll('#vPeriodBtns [data-vperiod]').forEach((b) => b.classList.remove('gold'));
+  const f = $('vFrom').value, t = $('vTo').value;
+  loadVisits({ from: f ? new Date(f + 'T00:00:00').toISOString() : null, to: t ? new Date(t + 'T23:59:59').toISOString() : null });
+};
+
+function openVisits() {
+  hideAllViews(); show($('visitsView'));
+  window.scrollTo(0, 0);
+  document.querySelectorAll('#vPeriodBtns [data-vperiod]').forEach((b) => {
+    b.onclick = () => {
+      visitsPeriod = b.dataset.vperiod;
+      document.querySelectorAll('#vPeriodBtns [data-vperiod]').forEach((x) => x.classList.toggle('gold', x === b));
+      $('vFrom').value = ''; $('vTo').value = '';
+      loadVisits(periodRange(visitsPeriod));
+    };
+  });
+  loadVisits(periodRange(visitsPeriod));
+}
+
+async function loadVisits(range) {
+  const kpis = $('visitsKpis'), list = $('visitsList');
+  kpis.innerHTML = ''; list.innerHTML = '<p class="muted">Carregando…</p>';
+
+  // total exato (count) + amostra das últimas 1000 visitas para o ranking
+  let cq = sb.from('page_views').select('*', { count: 'exact', head: true });
+  let rq = sb.from('page_views').select('path, title, session_id, created_at').order('created_at', { ascending: false }).limit(1000);
+  if (range && range.from) { cq = cq.gte('created_at', range.from); rq = rq.gte('created_at', range.from); }
+  if (range && range.to) { cq = cq.lte('created_at', range.to); rq = rq.lte('created_at', range.to); }
+
+  const [{ count, error: cErr }, { data, error: rErr }] = await Promise.all([cq, rq]);
+  if (cErr || rErr) { list.innerHTML = `<p class="muted">Erro ao carregar. (Rodou o visitas.sql?)</p>`; return; }
+
+  const rows = data || [];
+  const totalVisits = count || 0;
+  const uniqueSessions = new Set(rows.map((r) => r.session_id).filter(Boolean)).size;
+
+  // ranking por página
+  const byPage = {};
+  rows.forEach((r) => {
+    const key = r.title || r.path;
+    if (!byPage[key]) byPage[key] = { title: key, views: 0, sessions: new Set() };
+    byPage[key].views += 1;
+    if (r.session_id) byPage[key].sessions.add(r.session_id);
+  });
+  const pages = Object.values(byPage).map((p) => ({ title: p.title, views: p.views, uniques: p.sessions.size })).sort((a, b) => b.views - a.views);
+
+  const kpi = (label, value, sub) => `
+    <div class="card" style="margin:0;">
+      <div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em;">${label}</div>
+      <div style="font-family:Cinzel,serif;font-size:26px;color:var(--gold);margin-top:6px;">${value}</div>
+      ${sub ? `<div class="muted" style="font-size:12px;margin-top:4px;">${sub}</div>` : ''}
+    </div>`;
+  kpis.innerHTML =
+    kpi('Visitas', totalVisits.toLocaleString('pt-BR'), 'páginas vistas no período') +
+    kpi('Visitantes únicos', uniqueSessions.toLocaleString('pt-BR'), totalVisits > 1000 ? 'baseado nas últimas 1000' : 'no período');
+
+  if (!pages.length) { list.innerHTML = '<p class="muted">Nenhuma visita no período.</p>'; return; }
+  list.innerHTML = `
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div style="display:flex;justify-content:space-between;padding:10px 18px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line);">
+        <span>Página</span><span>Visitas · Únicos</span>
+      </div>
+      ${pages.map((p) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);"><span>${p.title}</span><span style="color:var(--gold);white-space:nowrap;">${p.views} · ${p.uniques}</span></div>`).join('')}
+    </div>
+    ${totalVisits > 1000 ? '<p class="muted" style="margin-top:10px;font-size:12px;">Ranking baseado nas últimas 1000 visitas do período.</p>' : ''}`;
+}
 
 // ---------- CUPONS ----------
 $('couponsBtn').onclick = openCoupons;

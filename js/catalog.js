@@ -73,6 +73,22 @@ function orderText(items) {
   return msg;
 }
 
+// ---------- registro de visitas (analytics) ----------
+function sessionId() {
+  let s = '';
+  try {
+    s = localStorage.getItem('mrbrant_sid') || '';
+    if (!s) { s = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('mrbrant_sid', s); }
+  } catch (e) {}
+  return s;
+}
+let lastTracked = '';
+function track(path, title) {
+  if (path === lastTracked) return; // evita contar a mesma página em sequência
+  lastTracked = path;
+  try { sb.from('page_views').insert({ path, title, session_id: sessionId() }).then(() => {}, () => {}); } catch (e) {}
+}
+
 function toast(msg) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -218,12 +234,20 @@ function cartSubtotal() {
 // ---------- render principal ----------
 function render() {
   updateCartBadge();
-  if (state.screen === 'home') return renderHome();
-  if (state.screen === 'category') return renderCategory();
-  if (state.screen === 'product') return renderProduct();
-  if (state.screen === 'cart') return renderCart();
-  if (state.screen === 'checkout') return renderCheckout();
-  if (state.screen === 'tracking') return renderTracking();
+  if (state.screen === 'home') { track('home', 'Início'); return renderHome(); }
+  if (state.screen === 'category') {
+    const cat = catBySlug(state.catSlug);
+    track(`category:${state.catSlug}:${state.sub}`, `Categoria: ${cat ? cat.name : state.catSlug}${state.sub !== 'Todas' ? ' / ' + state.sub : ''}`);
+    return renderCategory();
+  }
+  if (state.screen === 'product') {
+    const p = prodById(state.prodId);
+    track(`product:${p ? p.slug : state.prodId}`, `Produto: ${p ? p.name : ''}`);
+    return renderProduct();
+  }
+  if (state.screen === 'cart') { track('cart', 'Sacola'); return renderCart(); }
+  if (state.screen === 'checkout') { track('checkout', 'Checkout'); return renderCheckout(); }
+  if (state.screen === 'tracking') { track('tracking', 'Acompanhar pedido'); return renderTracking(); }
 }
 
 // ---------- HOME ----------

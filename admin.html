@@ -90,6 +90,7 @@
     <button id="boxesBtn" class="btn">📏 Tamanhos</button>
     <button id="couponsBtn" class="btn">🎟 Cupons</button>
     <button id="ordersBtn" class="btn">📦 Pedidos</button>
+    <button id="visitsBtn" class="btn">📊 Visitas</button>
     <button id="settingsBtn" class="btn">⚙ Configurações</button>
     <button id="newBtn" class="btn gold">+ Nova imagem</button>
     <button id="logoutBtn" class="btn">Sair</button>
@@ -125,6 +126,33 @@
       </div>
       <p class="muted" style="margin-bottom:16px;">Crie códigos de desconto (percentual ou valor fixo) com período de validade. O valor fixo nunca passa do subtotal do pedido.</p>
       <div id="couponsList"></div>
+    </div>
+
+    <!-- VISITAS -->
+    <div id="visitsView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <button id="visitsBack" class="btn sm">← Voltar</button>
+        <h2>Visitas</h2>
+      </div>
+
+      <div class="card" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div id="vPeriodBtns" style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button class="btn sm" data-vperiod="today">Hoje</button>
+          <button class="btn sm" data-vperiod="7">7 dias</button>
+          <button class="btn sm gold" data-vperiod="30">30 dias</button>
+          <button class="btn sm" data-vperiod="month">Este mês</button>
+          <button class="btn sm" data-vperiod="all">Tudo</button>
+        </div>
+        <span style="flex:1;"></span>
+        <div class="field" style="margin:0;"><label>De</label><input id="vFrom" type="date" style="width:auto;"></div>
+        <div class="field" style="margin:0;"><label>Até</label><input id="vTo" type="date" style="width:auto;"></div>
+        <button id="vApply" class="btn sm">Aplicar</button>
+      </div>
+
+      <div id="visitsKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;"></div>
+
+      <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Páginas mais visitadas</h3>
+      <div id="visitsList"></div>
     </div>
 
     <!-- PEDIDOS -->
@@ -339,7 +367,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625k"></script>
-<script src="js/admin.js?v=20260625k"></script>
+<script src="js/config.js?v=20260625l"></script>
+<script src="js/admin.js?v=20260625l"></script>
 </body>
 </html>
