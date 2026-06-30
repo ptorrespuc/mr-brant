@@ -281,6 +281,30 @@
         </div>
       </div>
 
+      <div class="card">
+        <h3 style="font-size:16px;margin-bottom:14px;">Remetente da etiqueta (Melhor Envio)</h3>
+        <p class="muted" style="margin-bottom:12px;">Seus dados como remetente — vão na etiqueta e na Declaração de Conteúdo. O CEP de origem é o configurado em "Frete".</p>
+        <div class="row">
+          <div class="field"><label>Nome / Razão social</label><input id="s_remet_nome"></div>
+          <div class="field"><label>CPF/CNPJ</label><input id="s_remet_documento" placeholder="só dígitos"></div>
+          <div class="field"><label>Telefone</label><input id="s_remet_telefone"></div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:2;"><label>Endereço (rua)</label><input id="s_remet_endereco"></div>
+          <div class="field"><label>Número</label><input id="s_remet_numero"></div>
+          <div class="field"><label>Complemento</label><input id="s_remet_complemento"></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Bairro</label><input id="s_remet_bairro"></div>
+          <div class="field"><label>Cidade</label><input id="s_remet_cidade"></div>
+          <div class="field" style="flex:0 0 90px;"><label>UF</label><input id="s_remet_uf" maxlength="2"></div>
+        </div>
+        <div class="field" style="display:flex;align-items:center;gap:10px;">
+          <input id="s_me_sandbox" type="checkbox" style="width:auto;">
+          <label style="margin:0;">Ambiente de teste (sandbox) do Melhor Envio para etiquetas</label>
+        </div>
+      </div>
+
       <button id="settingsSave" class="btn gold" style="width:100%;padding:14px;">Salvar configurações</button>
     </div>
 
@@ -378,7 +402,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260625o"></script>
-<script src="js/admin.js?v=20260625o"></script>
+<script src="js/config.js?v=20260625p"></script>
+<script src="js/admin.js?v=20260625p"></script>
 </body>
 </html>

@@ -463,12 +463,39 @@ async function openOrder(id) {
         <div class="field"><label>Código de rastreio</label><input id="o_tracking" value="${o.tracking_code || ''}" placeholder="Ex.: AA123456789BR"></div>
       </div>
       <button id="o_save" class="btn gold">Salvar</button>
+    </div>
+    <div class="card">
+      <h3 style="font-size:16px;margin-bottom:10px;">Etiqueta (Melhor Envio)</h3>
+      ${o.label_url
+        ? `<p>Etiqueta gerada${o.tracking_code ? ' · rastreio <strong>' + o.tracking_code + '</strong>' : ''}.</p>
+           <a class="btn gold sm" href="${o.label_url}" target="_blank" rel="noopener" style="margin-top:10px;display:inline-block;">Imprimir etiqueta + declaração (PDF)</a>`
+        : (o.shipping_service_id
+            ? `<p class="muted" style="margin-bottom:10px;">Gera a etiqueta dos Correios + Declaração de Conteúdo e o código de rastreio (consome saldo do Melhor Envio).</p>
+               <button id="o_label" class="btn gold">Gerar etiqueta</button>
+               <div id="o_labelMsg" style="margin-top:10px;font-size:13px;"></div>`
+            : `<p class="muted">Este pedido não tem serviço de frete definido (frete "a combinar"). Defina o envio manualmente.</p>`)}
     </div>`;
   $('o_save').onclick = async () => {
     show($('loader'));
     const { error } = await sb.from('orders').update({ status: $('o_status').value, tracking_code: $('o_tracking').value.trim() || null }).eq('id', id);
     hide($('loader'));
     toast(error ? 'Erro ao salvar' : 'Pedido atualizado');
+  };
+  const lblBtn = $('o_label');
+  if (lblBtn) lblBtn.onclick = async () => {
+    if (!confirm('Gerar a etiqueta? Isso compra a postagem no Melhor Envio (consome saldo).')) return;
+    const msg = $('o_labelMsg');
+    lblBtn.disabled = true; lblBtn.textContent = 'Gerando…'; msg.textContent = '';
+    try {
+      const { data, error } = await sb.functions.invoke('gerar-etiqueta', { body: { order_id: id } });
+      if (error) { let d = ''; try { d = await error.context.text(); } catch (e) {} throw new Error(d || error.message); }
+      if (data.error) throw new Error(data.error + (data.detail ? ' — ' + JSON.stringify(data.detail).slice(0, 200) : ''));
+      toast('Etiqueta gerada!');
+      openOrder(id); // recarrega o detalhe
+    } catch (e) {
+      lblBtn.disabled = false; lblBtn.textContent = 'Gerar etiqueta';
+      msg.style.color = 'var(--red)'; msg.textContent = 'Erro: ' + (e.message || e);
+    }
   };
 }
 
@@ -501,6 +528,8 @@ async function openSettings() {
   $('s_mp_sandbox').checked = (map.mp_sandbox || 'true') === 'true';
   $('s_resend_from').value = map.resend_from || '';
   $('s_site_url').value = map.site_url || '';
+  ['nome', 'documento', 'telefone', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf'].forEach((k) => { $('s_remet_' + k).value = map['remet_' + k] || ''; });
+  $('s_me_sandbox').checked = (map.melhorenvio_sandbox || 'false') === 'true';
 }
 
 $('settingsSave').onclick = async () => {
@@ -522,6 +551,8 @@ $('settingsSave').onclick = async () => {
       { key: 'mp_sandbox', value: $('s_mp_sandbox').checked ? 'true' : 'false' },
       { key: 'resend_from', value: $('s_resend_from').value.trim() },
       { key: 'site_url', value: $('s_site_url').value.trim() },
+      { key: 'melhorenvio_sandbox', value: $('s_me_sandbox').checked ? 'true' : 'false' },
+      ...['nome', 'documento', 'telefone', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf'].map((k) => ({ key: 'remet_' + k, value: $('s_remet_' + k).value.trim() })),
     ];
     const { error } = await sb.from('settings').upsert(rows, { onConflict: 'key' });
     if (error) throw error;

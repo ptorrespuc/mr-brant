@@ -17,7 +17,7 @@ let SETTINGS = {}; // { whatsapp, hero_eyebrow, hero_title, hero_subtitle, hero_
 const state = {
   screen: 'home', catSlug: 'imagens', sub: 'Todas', prodId: null,
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
-  checkout: loadCheckout(), shipMethod: null, shipCents: null, trackToken: null,
+  checkout: loadCheckout(), shipMethod: null, shipCents: null, shipServiceId: null, trackToken: null,
   coupon: { code: '', discount: 0, freeShipping: false },
 };
 function loadCheckout() { try { return JSON.parse(localStorage.getItem('mrbrant_checkout')) || {}; } catch (e) { return {}; } }
@@ -117,6 +117,15 @@ function allowedCompanies() {
   return (SETTINGS.frete_empresas || '').split(',').map((s) => s.trim()).filter(Boolean);
 }
 function sizeLabel(s) { return (s && (s.box_sizes?.label || s.label)) || ''; }
+// pacote combinado da sacola (1 caixa): empilha alturas, maior C/L, soma pesos
+function combinedPackage() {
+  let weight = 0, maxL = 0, maxW = 0, sumH = 0;
+  state.cart.forEach((it) => {
+    const { size } = cartLineInfo(it); const pk = packageFor(size);
+    for (let n = 0; n < it.qty; n++) { weight += pk.weightKg * 1000; maxL = Math.max(maxL, pk.length); maxW = Math.max(maxW, pk.width); sumH += pk.height; }
+  });
+  return { weight_g: Math.round(weight) || 300, length_cm: Math.round(maxL) || 16, width_cm: Math.round(maxW) || 11, height_cm: Math.max(2, Math.round(sumH)) };
+}
 function packageFor(size) {
   const num = (v, def) => (v != null && v !== '' ? Number(v) : Number(def));
   const box = size && size.box_sizes;
@@ -857,7 +866,7 @@ async function checkoutCalcFrete() {
           <span>Combinar o frete depois (pelo WhatsApp)</span>
         </label>`;
       $('#ck_freteRetry').onclick = checkoutCalcFrete;
-      $('#ck_freteCombine').onchange = () => { state.shipMethod = 'A combinar'; state.shipCents = 0; ckUpdate(); };
+      $('#ck_freteCombine').onchange = () => { state.shipMethod = 'A combinar'; state.shipCents = 0; state.shipServiceId = null; ckUpdate(); };
       return;
     }
     res.innerHTML = opts.map((o, i) => `
@@ -866,7 +875,7 @@ async function checkoutCalcFrete() {
         <span style="flex:1;">${esc(o.company)} ${esc(o.service)}${o.days ? ' · ' + o.days + ' dia' + (o.days > 1 ? 's' : '') : ''}</span>
         <span style="color:var(--gold);">${brl(Math.round(o.price * 100))}</span>
       </label>`).join('');
-    const pick = (i) => { state.shipMethod = `${opts[i].company} ${opts[i].service}`.trim(); state.shipCents = Math.round(opts[i].price * 100); ckUpdate(); };
+    const pick = (i) => { state.shipMethod = `${opts[i].company} ${opts[i].service}`.trim(); state.shipCents = Math.round(opts[i].price * 100); state.shipServiceId = opts[i].id; ckUpdate(); };
     $$('#ck_freteOpts input[name=ckfrete]').forEach((r, i) => r.onchange = () => pick(i));
     pick(0); // pré-seleciona o mais barato
   } catch (e) {
@@ -889,7 +898,8 @@ async function checkoutPay(pay) {
     const waItems = state.cart.map((it) => { const { p, size } = cartLineInfo(it); return { p, size, qty: it.qty }; }).filter((x) => x.p && x.size);
     const waSubtotal = cartSubtotal();
     const customer = { email: c.email, name: c.name, phone: c.phone, cpf: (c.cpf || '').replace(/\D/g, '') };
-    const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents };
+    const pkg = combinedPackage();
+    const shipping = { cep: c.cep, street: c.street, number: c.number, complement: c.complement, district: c.district, city: c.city, state: c.state, method: state.shipMethod, price_cents: state.shipCents, service_id: state.shipServiceId, package: pkg };
     const { data, error } = await sb.functions.invoke('criar-pedido', { body: { items, customer, shipping, origin: siteBase(), pay, coupon: state.coupon.code } });
     if (error) throw error;
     if (data.error) throw new Error(data.error);
