@@ -93,12 +93,12 @@ function openVisits() {
 }
 
 async function loadVisits(range) {
-  const kpis = $('visitsKpis'), list = $('visitsList');
-  kpis.innerHTML = ''; list.innerHTML = '<p class="muted">Carregando…</p>';
+  const kpis = $('visitsKpis'), list = $('visitsList'), chart = $('visitsChart'), sources = $('visitsSources');
+  kpis.innerHTML = ''; chart.innerHTML = ''; sources.innerHTML = ''; list.innerHTML = '<p class="muted">Carregando…</p>';
 
   // total exato (count) + amostra das últimas 1000 visitas para o ranking
   let cq = sb.from('page_views').select('*', { count: 'exact', head: true });
-  let rq = sb.from('page_views').select('path, title, session_id, created_at').order('created_at', { ascending: false }).limit(1000);
+  let rq = sb.from('page_views').select('path, title, session_id, source, created_at').order('created_at', { ascending: false }).limit(1000);
   if (range && range.from) { cq = cq.gte('created_at', range.from); rq = rq.gte('created_at', range.from); }
   if (range && range.to) { cq = cq.lte('created_at', range.to); rq = rq.lte('created_at', range.to); }
 
@@ -128,6 +128,30 @@ async function loadVisits(range) {
   kpis.innerHTML =
     kpi('Visitas', totalVisits.toLocaleString('pt-BR'), 'páginas vistas no período') +
     kpi('Visitantes únicos', uniqueSessions.toLocaleString('pt-BR'), totalVisits > 1000 ? 'baseado nas últimas 1000' : 'no período');
+
+  // gráfico de visitas por dia
+  const byDay = {};
+  rows.forEach((r) => { const d = (r.created_at || '').slice(0, 10); if (d) byDay[d] = (byDay[d] || 0) + 1; });
+  const days = Object.keys(byDay).sort();
+  if (!days.length) { chart.innerHTML = '<p class="muted">Sem dados no período.</p>'; }
+  else {
+    const maxD = Math.max(...days.map((d) => byDay[d]));
+    chart.innerHTML = `<div style="display:flex;align-items:flex-end;gap:4px;height:140px;overflow-x:auto;padding-top:6px;">${days.map((d) => {
+      const h = Math.round((byDay[d] / maxD) * 120) + 2;
+      const lbl = d.slice(8, 10) + '/' + d.slice(5, 7);
+      return `<div title="${lbl}: ${byDay[d]} visitas" style="display:flex;flex-direction:column;align-items:center;gap:4px;min-width:24px;flex:1;">
+        <div style="font-size:10px;color:var(--muted);">${byDay[d]}</div>
+        <div style="width:60%;min-width:8px;height:${h}px;background:var(--gold);border-radius:3px 3px 0 0;"></div>
+        <div style="font-size:9px;color:var(--muted);writing-mode:vertical-rl;">${lbl}</div>
+      </div>`;
+    }).join('')}</div>`;
+  }
+
+  // origem do tráfego (visitantes únicos por origem)
+  const bySource = {};
+  rows.forEach((r) => { const s = r.source || 'desconhecido'; if (!bySource[s]) bySource[s] = new Set(); if (r.session_id) bySource[s].add(r.session_id); });
+  const srcList = Object.entries(bySource).map(([s, set]) => ({ source: s, uniques: set.size })).sort((a, b) => b.uniques - a.uniques);
+  sources.innerHTML = srcList.length ? `<div class="card" style="padding:0;overflow:hidden;">${srcList.map((s) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);"><span style="text-transform:capitalize;">${s.source}</span><span style="color:var(--gold);">${s.uniques}</span></div>`).join('')}</div>` : '<p class="muted">Sem dados.</p>';
 
   if (!pages.length) { list.innerHTML = '<p class="muted">Nenhuma visita no período.</p>'; return; }
   list.innerHTML = `

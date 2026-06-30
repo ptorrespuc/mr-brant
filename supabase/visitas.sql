@@ -8,8 +8,12 @@ create table if not exists page_views (
   path        text not null,        -- chave da página (ex.: 'product:oxum')
   title       text,                 -- rótulo legível (ex.: 'Produto: Oxum')
   session_id  text,                 -- id anônimo do navegador (visitante único)
+  source      text,                 -- origem do tráfego (google, instagram, direto...)
   created_at  timestamptz not null default now()
 );
+
+-- (para tabelas já existentes) adiciona a coluna de origem
+alter table page_views add column if not exists source text;
 
 create index if not exists idx_page_views_created on page_views (created_at);
 

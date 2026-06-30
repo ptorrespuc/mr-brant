@@ -82,11 +82,26 @@ function sessionId() {
   } catch (e) {}
   return s;
 }
+// origem do tráfego — capturada uma vez ao carregar (antes de navegar internamente)
+const TRAFFIC_SOURCE = (() => {
+  try {
+    const utm = new URLSearchParams(location.search).get('utm_source');
+    if (utm) return utm.toLowerCase().slice(0, 40);
+    const ref = document.referrer || '';
+    if (!ref) return 'direto';
+    const host = new URL(ref).hostname.replace(/^www\./, '');
+    if (host === location.hostname) return 'direto';
+    const map = [['google', 'google'], ['instagram', 'instagram'], ['facebook', 'facebook'], ['fb.', 'facebook'], ['shopee', 'shopee'], ['mercadoli', 'mercado livre'], ['bing', 'bing'], ['t.co', 'twitter/x'], ['twitter', 'twitter/x'], ['x.com', 'twitter/x'], ['youtube', 'youtube'], ['tiktok', 'tiktok'], ['whatsapp', 'whatsapp'], ['wa.me', 'whatsapp'], ['linktr', 'linktree']];
+    for (const [needle, name] of map) if (host.includes(needle)) return name;
+    return host.slice(0, 40);
+  } catch (e) { return 'outro'; }
+})();
+
 let lastTracked = '';
 function track(path, title) {
   if (path === lastTracked) return; // evita contar a mesma página em sequência
   lastTracked = path;
-  try { sb.from('page_views').insert({ path, title, session_id: sessionId() }).then(() => {}, () => {}); } catch (e) {}
+  try { sb.from('page_views').insert({ path, title, session_id: sessionId(), source: TRAFFIC_SOURCE }).then(() => {}, () => {}); } catch (e) {}
 }
 
 function toast(msg) {
