@@ -411,6 +411,62 @@ function renderCategory() {
 }
 
 // ---------- PRODUCT ----------
+// ---------- LIGHTBOX (zoom em tela cheia) ----------
+function openLightbox(images, startIndex) {
+  if (!images || !images.length) return;
+  let idx = Math.max(0, Math.min(startIndex || 0, images.length - 1));
+  let zoomed = false;
+
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(8,5,2,.97);display:flex;flex-direction:column;touch-action:none;';
+  ov.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;">
+      <span style="color:#b7a98d;font-size:13px;">Clique na imagem para dar zoom · arraste para mover</span>
+      <button id="lbClose" style="background:transparent;border:none;color:#f4ecdb;font-size:30px;cursor:pointer;line-height:1;">×</button>
+    </div>
+    <div id="lbStage" style="flex:1;position:relative;overflow:hidden;cursor:zoom-in;background-position:center;background-size:contain;background-repeat:no-repeat;"></div>
+    ${images.length > 1 ? `
+      <button id="lbPrev" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(13,10,5,.7);color:#f4ecdb;border:1px solid rgba(205,163,82,.4);border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;">‹</button>
+      <button id="lbNext" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(13,10,5,.7);color:#f4ecdb;border:1px solid rgba(205,163,82,.4);border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;">›</button>
+      <div id="lbThumbs" style="display:flex;gap:8px;justify-content:center;padding:12px;flex-wrap:wrap;"></div>` : ''}`;
+  document.body.appendChild(ov);
+  document.body.style.overflow = 'hidden';
+
+  const stage = ov.querySelector('#lbStage');
+  const reset = () => { zoomed = false; stage.style.backgroundSize = 'contain'; stage.style.cursor = 'zoom-in'; };
+  const setImg = () => {
+    stage.style.backgroundImage = `url('${images[idx]}')`;
+    reset();
+    ov.querySelectorAll('[data-lbt]').forEach((t, i) => t.style.borderColor = i === idx ? 'var(--gold)' : 'transparent');
+  };
+  const pan = (cx, cy) => {
+    const r = stage.getBoundingClientRect();
+    const x = Math.max(0, Math.min(100, ((cx - r.left) / r.width) * 100));
+    const y = Math.max(0, Math.min(100, ((cy - r.top) / r.height) * 100));
+    stage.style.backgroundPosition = `${x}% ${y}%`;
+  };
+  stage.onclick = (e) => {
+    if (!zoomed) { zoomed = true; stage.style.backgroundSize = '240%'; stage.style.cursor = 'zoom-out'; pan(e.clientX, e.clientY); }
+    else reset();
+  };
+  stage.onmousemove = (e) => { if (zoomed) pan(e.clientX, e.clientY); };
+  stage.ontouchmove = (e) => { if (zoomed && e.touches[0]) { pan(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } };
+
+  const nav = (d) => { idx = (idx + d + images.length) % images.length; setImg(); };
+  const close = () => { ov.remove(); document.body.style.overflow = ''; document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); else if (e.key === 'ArrowLeft') nav(-1); else if (e.key === 'ArrowRight') nav(1); };
+  document.addEventListener('keydown', onKey);
+  ov.querySelector('#lbClose').onclick = close;
+  if (images.length > 1) {
+    ov.querySelector('#lbPrev').onclick = () => nav(-1);
+    ov.querySelector('#lbNext').onclick = () => nav(1);
+    const tc = ov.querySelector('#lbThumbs');
+    tc.innerHTML = images.map((u, i) => `<div data-lbt="${i}" style="width:54px;height:54px;border-radius:8px;background:#0d0a05 center/cover no-repeat;border:2px solid transparent;cursor:pointer;background-image:url('${u}')"></div>`).join('');
+    tc.querySelectorAll('[data-lbt]').forEach((t) => t.onclick = () => { idx = +t.dataset.lbt; setImg(); });
+  }
+  setImg();
+}
+
 function renderProduct() {
   const p = prodById(state.prodId);
   if (!p) return go('home');
@@ -428,7 +484,11 @@ function renderProduct() {
       <div class="breadcrumb"><span data-nav="home">Início</span> /&nbsp;<span data-nav="imagens">Imagens</span>${subName(p) ? ` /&nbsp;<span class="cur">${esc(subName(p))}</span>` : ''} /&nbsp;<span class="cur">${esc(p.name)}</span></div>
       <div class="prod-cols" style="display:grid;grid-template-columns:1.02fr 1fr;gap:48px;">
         <div>
-          <div style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;background:#0d0a05 center/contain no-repeat;border:1px solid var(--line);background-image:url('${mainUrl}')"></div>
+          <div id="prodMainImg" style="position:relative;border-radius:18px;overflow:hidden;aspect-ratio:4/5;background:#0d0a05 center/contain no-repeat;border:1px solid var(--line);cursor:zoom-in;background-image:url('${mainUrl}')">
+            <div style="position:absolute;bottom:12px;right:12px;background:rgba(13,10,5,.78);color:#e7cd8e;border:1px solid rgba(205,163,82,.4);border-radius:999px;padding:6px 12px;font-size:12px;display:flex;align-items:center;gap:6px;pointer-events:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4M11 8v6M8 11h6"/></svg>Ampliar
+            </div>
+          </div>
           <div style="display:flex;gap:10px;margin-top:13px;flex-wrap:wrap;">
             ${imgs.map((im, i) => `<div data-g="${i}" style="width:78px;height:78px;border-radius:11px;background:#0d0a05 top/cover no-repeat;border:1px solid ${i === state.gIndex ? 'var(--gold)' : 'var(--line2)'};cursor:pointer;background-image:url('${photoUrl(im.path)}')"></div>`).join('')}
           </div>
@@ -490,6 +550,9 @@ function renderProduct() {
   $('#buyNow').onclick = () => { addToCart(); go('checkout'); };
   $$('[data-size]').forEach((b) => b.onclick = () => { state.selSizeId = b.dataset.size; renderProduct(); });
   $$('[data-g]').forEach((b) => b.onclick = () => { state.gIndex = +b.dataset.g; renderProduct(); });
+  // zoom em tela cheia
+  const mainImg = $('#prodMainImg');
+  if (mainImg) mainImg.onclick = () => openLightbox(imgs.map((im) => photoUrl(im.path)), state.gIndex);
   // frete
   maskCep($('#cep_prod'));
   $('#cepBtn_prod').onclick = () => {
