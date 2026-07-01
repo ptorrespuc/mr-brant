@@ -101,7 +101,7 @@ Deno.serve(async (req) => {
     } catch (_) {}
 
     await admin.from('orders').update({
-      melhorenvio_id: String(meId), label_url: labelUrl, tracking_code: tracking, status: 'enviado',
+      melhorenvio_id: String(meId), label_url: labelUrl, tracking_code: tracking, status: 'preparando_envio',
     }).eq('id', order_id);
 
     return json({ ok: true, label_url: labelUrl, tracking_code: tracking, melhorenvio_id: meId });

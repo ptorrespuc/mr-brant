@@ -939,7 +939,7 @@ async function checkoutPay(pay) {
 }
 
 // ---------- ACOMPANHAMENTO ----------
-const STATUS_LABEL = { pendente: 'Aguardando pagamento', negociando: 'Em negociação pelo WhatsApp', pago: 'Pago', cancelado: 'Cancelado', enviado: 'Enviado', entregue: 'Entregue' };
+const STATUS_LABEL = { pendente: 'Aguardando pagamento', negociando: 'Em negociação pelo WhatsApp', pago: 'Pago', preparando_envio: 'Preparando envio', enviado: 'Enviado', cancelado: 'Cancelado', entregue: 'Entregue' };
 
 function renderTracking() {
   if (state.trackToken) return fetchAndShowOrder({ token: state.trackToken });

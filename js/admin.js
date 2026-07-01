@@ -63,7 +63,9 @@ async function enterApp() {
 }
 
 // ---------- PEDIDOS ----------
-const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'enviado', 'entregue', 'cancelado'];
+const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'preparando_envio', 'enviado', 'entregue', 'cancelado'];
+const STATUS_LABELS = { pendente: 'Pendente', negociando: 'Negociando (WhatsApp)', pago: 'Pago', preparando_envio: 'Preparando envio', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
+const statusLabel = (s) => STATUS_LABELS[s] || s;
 const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'couponsView', 'visitsView'].forEach((v) => hide($(v))); }
 
@@ -328,7 +330,7 @@ $('ordersBtn').onclick = openOrders;
 $('ordersBack').onclick = () => { hide($('ordersView')); show($('listView')); };
 $('orderBack').onclick = () => { hide($('orderView')); openOrders(); };
 
-const PAID_STATUS = ['pago', 'enviado', 'entregue'];
+const PAID_STATUS = ['pago', 'preparando_envio', 'enviado', 'entregue'];
 let ordersPeriod = '30'; // período selecionado
 let ordersStatus = 'confirmados'; // filtro de status da lista
 let lastOrders = []; // pedidos do período carregados
@@ -394,7 +396,7 @@ function renderOrdersList() {
   list.innerHTML = filtered.map((o) => `
     <div class="card" data-order="${o.id}" style="cursor:pointer;display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;">
       <div>
-        <div style="font-weight:600;">${o.number || '—'} <span class="badge">${o.status}</span></div>
+        <div style="font-weight:600;">${o.number || '—'} <span class="badge">${statusLabel(o.status)}</span></div>
         <div class="muted" style="font-size:13px;">${o.customer_name || ''} · ${o.customer_email} · ${new Date(o.created_at).toLocaleString('pt-BR')}</div>
       </div>
       <div style="color:var(--gold);font-weight:600;">${brl(o.total_cents)}</div>
@@ -458,7 +460,7 @@ async function openOrder(id) {
       <h3 style="font-size:16px;margin-bottom:14px;">Gerenciar</h3>
       <div class="row">
         <div class="field"><label>Status</label>
-          <select id="o_status">${ORDER_STATUS.map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select>
+          <select id="o_status">${ORDER_STATUS.map((s) => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${statusLabel(s)}</option>`).join('')}</select>
         </div>
         <div class="field"><label>Código de rastreio</label><input id="o_tracking" value="${o.tracking_code || ''}" placeholder="Ex.: AA123456789BR"></div>
       </div>
