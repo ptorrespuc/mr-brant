@@ -1090,12 +1090,18 @@ async function init() {
   }
   sanitizeCart();
   fillFooterCats();
+  applyFooterAbout();
   refreshWaLinks();
   updateCartBadge();
   const params = new URLSearchParams(location.search);
   const pedido = params.get('pedido');
   if (pedido) { state.trackToken = pedido; state.screen = 'tracking'; }
   render();
+}
+
+function applyFooterAbout() {
+  const el = $('#footerAbout');
+  if (el && SETTINGS.footer_about) el.textContent = SETTINGS.footer_about;
 }
 
 function refreshWaLinks() {

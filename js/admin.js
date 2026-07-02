@@ -590,6 +590,7 @@ async function openSettings() {
   $('s_hero_title').value = map.hero_title || '';
   $('s_hero_subtitle').value = map.hero_subtitle || '';
   $('s_hero_featured').value = map.hero_featured_id || '';
+  $('s_footer_about').value = map.footer_about || '';
   $('s_frete_cep').value = map.frete_cep_origem || '';
   $('s_frete_peso').value = map.frete_peso_padrao || '';
   $('s_frete_comp').value = map.frete_comp_padrao || '';
@@ -613,6 +614,7 @@ $('settingsSave').onclick = async () => {
       { key: 'hero_title',       value: $('s_hero_title').value.trim() },
       { key: 'hero_subtitle',    value: $('s_hero_subtitle').value.trim() },
       { key: 'hero_featured_id', value: $('s_hero_featured').value },
+      { key: 'footer_about',     value: $('s_footer_about').value.trim() },
       { key: 'frete_cep_origem', value: $('s_frete_cep').value.replace(/\D/g, '') },
       { key: 'frete_peso_padrao', value: $('s_frete_peso').value.trim() },
       { key: 'frete_comp_padrao', value: $('s_frete_comp').value.trim() },
