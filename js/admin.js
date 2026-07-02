@@ -67,7 +67,7 @@ const ORDER_STATUS = ['pendente', 'negociando', 'pago', 'preparando_envio', 'env
 const STATUS_LABELS = { pendente: 'Pendente', negociando: 'Negociando (WhatsApp)', pago: 'Pago', preparando_envio: 'Preparando envio', enviado: 'Enviado', entregue: 'Entregue', cancelado: 'Cancelado' };
 const statusLabel = (s) => STATUS_LABELS[s] || s;
 const brl = (c) => ((c || 0) / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'couponsView', 'visitsView'].forEach((v) => hide($(v))); }
+function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView', 'orderView', 'boxesView', 'subsView', 'couponsView', 'visitsView'].forEach((v) => hide($(v))); }
 
 // ---------- VISITAS (analytics) ----------
 let visitsPeriod = '30';
@@ -324,6 +324,76 @@ async function deleteBox(row) {
   await loadReference();
   row.remove();
   toast('Tamanho excluído');
+}
+
+// ---------- SUBCATEGORIAS ----------
+$('subsBtn').onclick = openSubcats;
+$('subsBack').onclick = () => { hide($('subsView')); show($('listView')); };
+$('subAdd').onclick = () => addSubRow({});
+
+async function openSubcats() {
+  hideAllViews(); show($('subsView'));
+  window.scrollTo(0, 0);
+  await loadReference(); // recarrega CATEGORIES e SUBCATEGORIES
+  $('subsList').innerHTML = '';
+  if (!SUBCATEGORIES.length) $('subsList').innerHTML = '<p class="muted">Nenhuma subcategoria ainda. Clique em "+ Nova subcategoria".</p>';
+  SUBCATEGORIES.forEach((s) => addSubRow(s));
+}
+
+function addSubRow(s) {
+  if ($('subsList').querySelector('.muted')) $('subsList').innerHTML = '';
+  const v = (x) => (x == null ? '' : x);
+  const catOpts = CATEGORIES.map((c) => `<option value="${c.id}" ${c.id === s.category_id ? 'selected' : ''}>${c.name}</option>`).join('');
+  const row = document.createElement('div');
+  row.className = 'card';
+  row.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;';
+  row.dataset.id = s.id || '';
+  row.innerHTML = `
+    <div class="field" style="flex:0 0 170px;margin:0;"><label>Categoria</label><select class="s-cat">${catOpts}</select></div>
+    <div class="field" style="flex:1;min-width:140px;margin:0;"><label>Nome</label><input class="s-name" value="${v(s.name)}" placeholder="Orixás"></div>
+    <div class="field" style="flex:1;min-width:140px;margin:0;"><label>Slug (URL)</label><input class="s-slug" value="${v(s.slug)}" placeholder="orixas"></div>
+    <button class="btn gold sm s-save" type="button">Salvar</button>
+    <button class="btn danger sm s-del" type="button">Excluir</button>`;
+  const nameEl = row.querySelector('.s-name');
+  nameEl.addEventListener('blur', () => { const sl = row.querySelector('.s-slug'); if (!sl.value.trim()) sl.value = slugify(nameEl.value); });
+  row.querySelector('.s-save').onclick = () => saveSub(row);
+  row.querySelector('.s-del').onclick = () => deleteSub(row);
+  $('subsList').appendChild(row);
+}
+
+async function saveSub(row) {
+  const name = row.querySelector('.s-name').value.trim();
+  const category_id = row.querySelector('.s-cat').value;
+  if (!category_id) { toast('Selecione a categoria'); return; }
+  if (!name) { toast('Informe o nome da subcategoria'); return; }
+  const slug = row.querySelector('.s-slug').value.trim() || slugify(name);
+  const payload = { category_id, name, slug };
+  show($('loader'));
+  try {
+    if (row.dataset.id) {
+      const { error } = await sb.from('subcategories').update(payload).eq('id', row.dataset.id);
+      if (error) throw error;
+    } else {
+      payload.sort = SUBCATEGORIES.length;
+      const { data, error } = await sb.from('subcategories').insert(payload).select('id').single();
+      if (error) throw error;
+      row.dataset.id = data.id;
+    }
+    await loadReference();
+    hide($('loader')); toast('Subcategoria salva');
+  } catch (e) { hide($('loader')); toast('Erro: ' + (e.message || e)); }
+}
+
+async function deleteSub(row) {
+  if (!row.dataset.id) { row.remove(); return; }
+  if (!confirm('Excluir esta subcategoria? As imagens que a usam ficarão sem subcategoria.')) return;
+  show($('loader'));
+  const { error } = await sb.from('subcategories').delete().eq('id', row.dataset.id);
+  hide($('loader'));
+  if (error) { toast('Erro ao excluir: ' + error.message); return; }
+  await loadReference();
+  row.remove();
+  toast('Subcategoria excluída');
 }
 
 $('ordersBtn').onclick = openOrders;

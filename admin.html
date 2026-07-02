@@ -87,6 +87,7 @@
     <span class="logo">Mr.Brant</span>
     <span class="muted">Admin</span>
     <span class="spacer"></span>
+    <button id="subsBtn" class="btn">📂 Subcategorias</button>
     <button id="boxesBtn" class="btn">📏 Tamanhos</button>
     <button id="couponsBtn" class="btn">🎟 Cupons</button>
     <button id="ordersBtn" class="btn">📦 Pedidos</button>
@@ -102,6 +103,18 @@
       <h2 style="margin-bottom:16px;">Imagens cadastradas</h2>
       <div id="prodList" class="prod-list"></div>
       <p id="emptyMsg" class="muted hidden">Nenhuma imagem ainda. Clique em "+ Nova imagem".</p>
+    </div>
+
+    <!-- SUBCATEGORIAS -->
+    <div id="subsView" class="hidden">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+        <button id="subsBack" class="btn sm">← Voltar</button>
+        <h2>Subcategorias</h2>
+        <span class="spacer" style="flex:1;"></span>
+        <button id="subAdd" class="btn gold">+ Nova subcategoria</button>
+      </div>
+      <p class="muted" style="margin-bottom:16px;">São as seções que aparecem no menu (ex.: Orixás, Exus, Pombagiras) dentro de uma categoria. Ao cadastrar uma imagem, você escolhe a subcategoria.</p>
+      <div id="subsList"></div>
     </div>
 
     <!-- TAMANHOS (caixas) -->
