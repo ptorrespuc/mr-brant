@@ -19,6 +19,7 @@ const state = {
   gIndex: 0, selSizeId: null, qty: 1, cart: loadCart(),
   checkout: loadCheckout(), shipMethod: null, shipCents: null, shipServiceId: null, trackToken: null,
   coupon: { code: '', discount: 0, freeShipping: false },
+  query: '',
 };
 function loadCheckout() { try { return JSON.parse(localStorage.getItem('mrbrant_checkout')) || {}; } catch (e) { return {}; } }
 function saveCheckout() { try { localStorage.setItem('mrbrant_checkout', JSON.stringify(state.checkout)); } catch (e) {} }
@@ -291,6 +292,7 @@ function render() {
     track(`product:${p ? p.slug : state.prodId}`, `Produto: ${p ? p.name : ''}`);
     return renderProduct();
   }
+  if (state.screen === 'search') { track('search', 'Busca'); return renderSearch(); }
   if (state.screen === 'cart') { track('cart', 'Sacola'); return renderCart(); }
   if (state.screen === 'checkout') { track('checkout', 'Checkout'); return renderCheckout(); }
   if (state.screen === 'tracking') { track('tracking', 'Acompanhar pedido'); return renderTracking(); }
@@ -387,6 +389,53 @@ function renderHome() {
     </section>
   `;
   bindCards();
+}
+
+// ---------- BUSCA ----------
+function normText(s) { return (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function productMatches(p, q) {
+  if (!q) return true;
+  const hay = normText([p.name, subName(p), (p.descriptions || []).join(' '), p.note].join(' '));
+  return q.split(/\s+/).filter(Boolean).every((term) => hay.includes(term));
+}
+function searchResults() {
+  const q = normText(state.query.trim());
+  return q ? PRODUCTS.filter((p) => productMatches(p, q)) : PRODUCTS;
+}
+function updateSearchResults() {
+  const results = searchResults();
+  const meta = $('#searchMeta');
+  const box = $('#searchResults');
+  if (!box) return;
+  if (meta) meta.textContent = state.query.trim()
+    ? `${results.length} resultado${results.length !== 1 ? 's' : ''} para “${state.query.trim()}”`
+    : `${PRODUCTS.length} peças no catálogo`;
+  box.innerHTML = results.length
+    ? `<div class="grid4">${results.map(cardProd).join('')}</div>`
+    : `<div style="border:1px dashed var(--line2);border-radius:18px;padding:56px 28px;text-align:center;background:var(--surface);">
+         <div style="font-family:Cinzel,serif;font-size:22px;color:var(--text);">Nada encontrado</div>
+         <p style="color:var(--muted);max-width:440px;margin:12px auto 0;">Tente outro termo (nome da peça, guia ou orixá) ou fale com a gente no WhatsApp.</p>
+       </div>`;
+  bindCards();
+}
+function renderSearch() {
+  view.innerHTML = `
+    <div style="max-width:1240px;margin:0 auto;padding:38px 28px 70px;min-height:60vh;">
+      <div class="breadcrumb"><span data-nav="home">Início</span> &nbsp;/&nbsp; <span class="cur">Busca</span></div>
+      <h1 style="font-size:38px;margin:0 0 18px;">Buscar</h1>
+      <div style="position:relative;max-width:560px;margin-bottom:10px;">
+        <svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="searchInput" value="${esc(state.query)}" placeholder="Nome da peça, guia ou orixá…" autocomplete="off" style="padding-left:42px;">
+      </div>
+      <div id="searchMeta" class="muted" style="margin-bottom:22px;font-size:14px;"></div>
+      <div id="searchResults"></div>
+    </div>`;
+  const input = $('#searchInput');
+  input.oninput = () => { state.query = input.value; updateSearchResults(); };
+  input.onkeydown = (e) => { if (e.key === 'Enter') input.blur(); };
+  updateSearchResults();
+  input.focus();
+  const v = input.value; input.value = ''; input.value = v; // cursor ao fim
 }
 
 function cardProd(p) {
@@ -1060,6 +1109,7 @@ function applyTheme(t) {
 // ---------- init ----------
 function bindChrome() {
   $('#catsToggle').onclick = toggleMega;
+  $('#searchBtn').onclick = () => { closeMega(); go('search'); };
   $('#themeBtn').onclick = () => applyTheme(document.body.classList.contains('light') ? 'escuro' : 'claro');
   $('#contatoBtn').onclick = () => { closeMega(); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); };
   $('#waTop').href = waLink('Olá! Vim pelo site da Mr.Brant.');
