@@ -245,6 +245,17 @@ function updateCartBadge() {
   el.textContent = c;
   el.classList.toggle('hidden', c === 0);
 }
+// Remove linhas cujo produto/tamanho não existe mais (evita item fantasma
+// e erro no checkout ao recalcular preço de um size_id inexistente).
+function sanitizeCart() {
+  const before = state.cart.length;
+  state.cart = state.cart.filter((it) => {
+    const p = prodById(it.prodId);
+    if (!p) return false;
+    return prodSizes(p).some((s) => s.id === it.sizeId);
+  });
+  if (state.cart.length !== before) saveCart();
+}
 function addToCart() {
   const p = prodById(state.prodId); if (!p) return;
   const size = prodSizes(p).find((s) => s.id === state.selSizeId) || prodSizes(p)[0];
@@ -1077,6 +1088,7 @@ async function init() {
     view.innerHTML = `<div style="min-height:60vh;display:grid;place-items:center;color:var(--red);padding:40px;text-align:center;">Não foi possível carregar o catálogo.<br><span style="color:var(--muted);font-size:13px;">${esc(err.message || err)}</span></div>`;
     return;
   }
+  sanitizeCart();
   fillFooterCats();
   refreshWaLinks();
   updateCartBadge();
