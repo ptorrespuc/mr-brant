@@ -210,6 +210,10 @@
         <button class="btn sm" data-status="cancelado">Cancelados</button>
         <button class="btn sm" data-status="todos">Todos</button>
       </div>
+      <div id="bulkBar" class="hidden" style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+        <button id="cancelPendingBtn" class="btn sm danger">✕ Cancelar todos os pendentes</button>
+        <span class="muted" style="font-size:13px;">Cancela os pedidos pendentes (carrinhos não pagos) do período selecionado.</span>
+      </div>
       <div id="ordersList"></div>
       <p id="ordersEmpty" class="muted hidden">Nenhum pedido no período.</p>
     </div>
@@ -421,7 +425,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260702c"></script>
-<script src="js/admin.js?v=20260702c"></script>
+<script src="js/config.js?v=20260702d"></script>
+<script src="js/admin.js?v=20260702d"></script>
 </body>
 </html>

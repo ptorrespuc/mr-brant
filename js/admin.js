@@ -398,12 +398,26 @@ async function deleteSub(row) {
 
 $('ordersBtn').onclick = openOrders;
 $('ordersBack').onclick = () => { hide($('ordersView')); show($('listView')); };
+$('cancelPendingBtn').onclick = cancelAllPending;
+
+async function cancelAllPending() {
+  const ids = lastOrders.filter((o) => o.status === 'pendente').map((o) => o.id);
+  if (!ids.length) { toast('Nenhum pedido pendente no período'); return; }
+  if (!confirm(`Cancelar ${ids.length} pedido(s) pendente(s) deste período? Esta ação não pode ser desfeita.`)) return;
+  show($('loader'));
+  const { error } = await sb.from('orders').update({ status: 'cancelado' }).in('id', ids);
+  hide($('loader'));
+  if (error) { toast('Erro ao cancelar: ' + error.message); return; }
+  toast(`${ids.length} pedido(s) cancelado(s)`);
+  loadOrders(lastOrdersRange);
+}
 $('orderBack').onclick = () => { hide($('orderView')); openOrders(); };
 
 const PAID_STATUS = ['pago', 'preparando_envio', 'enviado', 'entregue'];
 let ordersPeriod = '30'; // período selecionado
 let ordersStatus = 'confirmados'; // filtro de status da lista
 let lastOrders = []; // pedidos do período carregados
+let lastOrdersRange = null; // intervalo usado no último carregamento
 
 function periodRange(period) {
   const now = new Date();
@@ -455,6 +469,8 @@ function statusMatch(o) {
 function renderOrdersList() {
   const list = $('ordersList');
   const filtered = lastOrders.filter(statusMatch);
+  const pendingCount = lastOrders.filter((o) => o.status === 'pendente').length;
+  $('bulkBar').classList.toggle('hidden', !(ordersStatus === 'pendente' && pendingCount > 0));
   if (!filtered.length) {
     list.innerHTML = '';
     const labels = { confirmados: 'confirmado', negociando: 'em negociação', pendente: 'pendente', cancelado: 'cancelado', todos: '' };
@@ -475,6 +491,7 @@ function renderOrdersList() {
 }
 
 async function loadOrders(range) {
+  lastOrdersRange = range;
   const list = $('ordersList');
   const kpis = $('ordersKpis');
   kpis.innerHTML = '';
