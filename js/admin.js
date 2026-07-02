@@ -600,6 +600,7 @@ async function openSettings() {
   $('s_frete_empresas').value = map.frete_empresas || '';
   $('s_mp_sandbox').checked = (map.mp_sandbox || 'true') === 'true';
   $('s_resend_from').value = map.resend_from || '';
+  $('s_admin_email').value = map.admin_email || '';
   $('s_site_url').value = map.site_url || '';
   ['nome', 'documento', 'telefone', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf'].forEach((k) => { $('s_remet_' + k).value = map['remet_' + k] || ''; });
   $('s_me_sandbox').checked = (map.melhorenvio_sandbox || 'false') === 'true';
@@ -624,6 +625,7 @@ $('settingsSave').onclick = async () => {
       { key: 'frete_empresas', value: $('s_frete_empresas').value.trim() },
       { key: 'mp_sandbox', value: $('s_mp_sandbox').checked ? 'true' : 'false' },
       { key: 'resend_from', value: $('s_resend_from').value.trim() },
+      { key: 'admin_email', value: $('s_admin_email').value.trim() },
       { key: 'site_url', value: $('s_site_url').value.trim() },
       { key: 'melhorenvio_sandbox', value: $('s_me_sandbox').checked ? 'true' : 'false' },
       ...['nome', 'documento', 'telefone', 'endereco', 'numero', 'complemento', 'bairro', 'cidade', 'uf'].map((k) => ({ key: 'remet_' + k, value: $('s_remet_' + k).value.trim() })),

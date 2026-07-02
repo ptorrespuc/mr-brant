@@ -289,6 +289,11 @@
           <p class="muted" style="margin-top:6px;">Nome e e-mail que aparecem como remetente. Use um e-mail de um domínio verificado no Resend. Para testar: <code>Mr.Brant &lt;onboarding@resend.dev&gt;</code>.</p>
         </div>
         <div class="field">
+          <label>E-mail do administrador</label>
+          <input id="s_admin_email" placeholder="voce@seudominio.com.br">
+          <p class="muted" style="margin-top:6px;">Recebe um aviso sempre que um pedido é pago, lembrando de gerar a etiqueta. Deixe vazio para não receber.</p>
+        </div>
+        <div class="field">
           <label>URL do site</label>
           <input id="s_site_url" placeholder="https://mrbrant.com.br">
           <p class="muted" style="margin-top:6px;">Usada para montar o link "Acompanhar meu pedido" nos e-mails de pagamento confirmado.</p>
@@ -416,7 +421,7 @@
 <div id="loader" class="center hidden"><div class="spinner"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="js/config.js?v=20260702b"></script>
-<script src="js/admin.js?v=20260702b"></script>
+<script src="js/config.js?v=20260702c"></script>
+<script src="js/admin.js?v=20260702c"></script>
 </body>
 </html>

@@ -48,12 +48,16 @@ Deno.serve(async (req) => {
 
     // e-mail de confirmação só quando aprovado
     if (order && newStatus === 'pago') {
-      const { data: cfg } = await admin.from('settings').select('key, value').in('key', ['resend_from', 'site_url']);
+      const { data: cfg } = await admin.from('settings').select('key, value').in('key', ['resend_from', 'site_url', 'admin_email']);
       const map: Record<string, string> = {};
       (cfg || []).forEach((r: any) => { map[r.key] = r.value; });
       const base = (map.site_url || '').replace(/\/$/, '');
       const link = base ? `${base}/?pedido=${order.token}` : '';
       await sendEmail(order, map.resend_from, link);
+      if (map.admin_email) {
+        const adminLink = base ? `${base}/admin.html` : '';
+        await sendAdminEmail(order, map.resend_from, map.admin_email, adminLink);
+      }
     }
 
     return new Response('ok', { status: 200 });
@@ -90,5 +94,38 @@ async function sendEmail(order: any, fromCfg?: string, link?: string) {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ from, to: order.customer_email, subject: `Pedido ${order.number} confirmado — Mr.Brant`, html }),
+  });
+}
+
+// Aviso ao administrador: pedido pago → próxima etapa é gerar a etiqueta.
+async function sendAdminEmail(order: any, fromCfg?: string, adminEmail?: string, adminLink?: string) {
+  const key = Deno.env.get('RESEND_API_KEY');
+  const from = fromCfg || Deno.env.get('RESEND_FROM') || 'Mr.Brant <onboarding@resend.dev>';
+  if (!key || !adminEmail) return;
+
+  const brl = (c: number) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
+  const rows = (order.order_items || []).map((i: any) =>
+    `<tr><td style="padding:6px 0;">${i.product_name}${i.size_label ? ' — ' + i.size_label : ''} (${i.qty}x)</td><td style="text-align:right;">${brl(i.line_total_cents)}</td></tr>`).join('');
+
+  const html = `
+    <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;color:#1d160d;">
+      <h2 style="color:#9c7322;">💰 Pedido pago — gerar etiqueta</h2>
+      <p>O pedido <strong>${order.number}</strong> foi pago. Próxima etapa: gerar a etiqueta de envio no admin.</p>
+      <p>
+        <strong>Cliente:</strong> ${order.customer_name || '—'}<br>
+        <strong>E-mail:</strong> ${order.customer_email || '—'}<br>
+        <strong>Frete:</strong> ${order.shipping_method || '—'}
+      </p>
+      <table style="width:100%;border-collapse:collapse;margin:14px 0;">${rows}
+        <tr><td style="padding-top:8px;font-weight:bold;">Total</td><td style="text-align:right;padding-top:8px;font-weight:bold;">${brl(order.total_cents)}</td></tr>
+      </table>
+      ${adminLink ? `<p><a href="${adminLink}" style="display:inline-block;background:#9c7322;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px;">Abrir painel e gerar etiqueta</a></p>` : ''}
+      <p style="color:#6f6450;font-size:13px;">Mr.Brant — Aviso administrativo</p>
+    </div>`;
+
+  await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ from, to: adminEmail, subject: `💰 Pedido ${order.number} pago — gerar etiqueta`, html }),
   });
 }
