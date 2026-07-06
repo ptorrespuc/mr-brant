@@ -100,7 +100,7 @@ async function loadVisits(range) {
 
   // total exato (count) + amostra das últimas 1000 visitas para o ranking
   let cq = sb.from('page_views').select('*', { count: 'exact', head: true });
-  let rq = sb.from('page_views').select('path, title, session_id, source, created_at').order('created_at', { ascending: false }).limit(1000);
+  let rq = sb.from('page_views').select('path, title, session_id, source, user_agent, created_at').order('created_at', { ascending: false }).limit(1000);
   if (range && range.from) { cq = cq.gte('created_at', range.from); rq = rq.gte('created_at', range.from); }
   if (range && range.to) { cq = cq.lte('created_at', range.to); rq = rq.lte('created_at', range.to); }
 
@@ -164,7 +164,93 @@ async function loadVisits(range) {
       ${pages.map((p) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);"><span>${p.title}</span><span style="color:var(--gold);white-space:nowrap;">${p.views} · ${p.uniques}</span></div>`).join('')}
     </div>
     ${totalVisits > 1000 ? '<p class="muted" style="margin-top:10px;font-size:12px;">Ranking baseado nas últimas 1000 visitas do período.</p>' : ''}`;
+
+  // Atualiza filtros na visão detalhada
+  const uniquePages = [...new Set(rows.map(r => r.title || r.path))].sort();
+  const uniqueSources = [...new Set(rows.map(r => r.source || 'desconhecido'))].sort();
+  const pageFilter = $('vDetailPageFilter');
+  const sourceFilter = $('vDetailSourceFilter');
+
+  pageFilter.innerHTML = '<option value="">📄 Todas as páginas</option>' + uniquePages.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  sourceFilter.innerHTML = '<option value="">🌐 Todas as origens</option>' + uniqueSources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+
+  // Armazena dados globais para filtros
+  window.visitsData = { rows, range };
 }
+
+function isBot(userAgent) {
+  if (!userAgent) return false;
+  const botPatterns = ['bot', 'crawler', 'spider', 'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'curl', 'wget', 'python'];
+  return botPatterns.some(pattern => userAgent.toLowerCase().includes(pattern));
+}
+
+function renderDetailedVisits() {
+  const rows = window.visitsData?.rows || [];
+  const pageFilter = $('vDetailPageFilter').value;
+  const sourceFilter = $('vDetailSourceFilter').value;
+  const excludeBots = $('vDetailExcludeBots').checked;
+
+  let filtered = rows.filter(r => {
+    const page = r.title || r.path;
+    if (pageFilter && page !== pageFilter) return false;
+    if (sourceFilter && (r.source || 'desconhecido') !== sourceFilter) return false;
+    if (excludeBots && isBot(r.user_agent)) return false;
+    return true;
+  }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  const container = $('vDetailTable');
+  if (!filtered.length) { container.innerHTML = '<p class="muted" style="padding:18px;">Nenhuma visita com esses filtros.</p>'; return; }
+
+  const header = `
+    <div style="display:flex;padding:12px 18px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line);gap:12px;min-width:900px;">
+      <span style="flex:0 0 120px;">Data/Hora</span>
+      <span style="flex:0 0 140px;">Página</span>
+      <span style="flex:0 0 100px;">Visitante</span>
+      <span style="flex:0 0 100px;">Origem</span>
+      <span style="flex:1;">User-Agent</span>
+      <span style="flex:0 0 70px;">Status</span>
+    </div>`;
+
+  const rows_html = filtered.map(r => {
+    const dt = new Date(r.created_at);
+    const botStatus = isBot(r.user_agent);
+    const statusColor = botStatus ? 'var(--red)' : 'var(--green)';
+    const statusLabel = botStatus ? '🤖 Bot' : '✓ Real';
+    const ua = r.user_agent || 'desconhecido';
+
+    return `<div style="display:flex;padding:10px 18px;border-bottom:1px solid var(--line);gap:12px;min-width:900px;font-size:11px;align-items:center;">
+      <span style="flex:0 0 120px;color:var(--muted);">${dt.getDate().toString().padStart(2,'0')}/${(dt.getMonth()+1).toString().padStart(2,'0')} ${dt.getHours().toString().padStart(2,'0')}:${dt.getMinutes().toString().padStart(2,'0')}</span>
+      <span style="flex:0 0 140px;">${esc(r.title || r.path)}</span>
+      <span style="flex:0 0 100px;color:var(--muted);">${r.session_id ? r.session_id.slice(0, 8) + '…' : '-'}</span>
+      <span style="flex:0 0 100px;text-transform:capitalize;">${esc(r.source || 'desconhecido')}</span>
+      <span style="flex:1;color:var(--muted);">${esc(ua)}</span>
+      <span style="flex:0 0 70px;color:${statusColor};font-weight:600;">${statusLabel}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = header + rows_html;
+}
+
+// Botões para alternar visão
+$('vSummaryBtn').onclick = () => {
+  $('vSummaryView').style.display = '';
+  $('vDetailView').style.display = 'none';
+  $('vSummaryBtn').classList.add('gold');
+  $('vDetailBtn').classList.remove('gold');
+};
+
+$('vDetailBtn').onclick = () => {
+  $('vSummaryView').style.display = 'none';
+  $('vDetailView').style.display = '';
+  $('vDetailBtn').classList.add('gold');
+  $('vSummaryBtn').classList.remove('gold');
+  renderDetailedVisits();
+};
+
+// Filtros na visão detalhada
+$('vDetailPageFilter').onchange = renderDetailedVisits;
+$('vDetailSourceFilter').onchange = renderDetailedVisits;
+$('vDetailExcludeBots').onchange = renderDetailedVisits;
 
 // ---------- CUPONS ----------
 $('couponsBtn').onclick = openCoupons;

@@ -148,6 +148,9 @@
       <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
         <button id="visitsBack" class="btn sm">← Voltar</button>
         <h2>Visitas</h2>
+        <span style="flex:1;"></span>
+        <button id="vSummaryBtn" class="btn gold sm">📊 Resumo</button>
+        <button id="vDetailBtn" class="btn sm">📋 Detalhado</button>
       </div>
 
       <div class="card" style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
@@ -164,20 +167,39 @@
         <button id="vApply" class="btn sm">Aplicar</button>
       </div>
 
-      <div id="visitsKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;"></div>
+      <!-- RESUMO (visão atual) -->
+      <div id="vSummaryView">
+        <div id="visitsKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;"></div>
 
-      <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Visitas por dia</h3>
-      <div id="visitsChart" class="card"></div>
+        <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Visitas por dia</h3>
+        <div id="visitsChart" class="card"></div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;" id="visitsCols">
-        <div>
-          <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Origem do tráfego</h3>
-          <div id="visitsSources"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start;" id="visitsCols">
+          <div>
+            <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Origem do tráfego</h3>
+            <div id="visitsSources"></div>
+          </div>
+          <div>
+            <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Páginas mais visitadas</h3>
+            <div id="visitsList"></div>
+          </div>
         </div>
-        <div>
-          <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Páginas mais visitadas</h3>
-          <div id="visitsList"></div>
+      </div>
+
+      <!-- DETALHADO (nova seção) -->
+      <div id="vDetailView" class="hidden">
+        <div class="card" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+          <span style="font-size:13px;color:var(--muted);">Filtros:</span>
+          <select id="vDetailPageFilter" style="flex:0 0 auto;max-width:200px;">
+            <option value="">📄 Todas as páginas</option>
+          </select>
+          <select id="vDetailSourceFilter" style="flex:0 0 auto;max-width:150px;">
+            <option value="">🌐 Todas as origens</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:6px;margin:0;"><input id="vDetailExcludeBots" type="checkbox" style="width:auto;"> Excluir bots</label>
         </div>
+
+        <div id="vDetailTable" class="card" style="padding:0;overflow-x:auto;"></div>
       </div>
     </div>
 

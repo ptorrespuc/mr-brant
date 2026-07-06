@@ -98,11 +98,30 @@ const TRAFFIC_SOURCE = (() => {
   } catch (e) { return 'outro'; }
 })();
 
+function getUserAgent() {
+  const ua = navigator.userAgent;
+  if (!ua) return 'desconhecido';
+  // Tenta identificar navegador
+  if (ua.includes('Chrome')) return 'Chrome';
+  if (ua.includes('Safari')) return ua.includes('Mobile') ? 'Safari/Mobile' : 'Safari';
+  if (ua.includes('Firefox')) return 'Firefox';
+  if (ua.includes('Edge')) return 'Edge';
+  if (ua.includes('Edg/')) return 'Edge';
+  // Detecta bots
+  if (ua.includes('Googlebot')) return 'Googlebot';
+  if (ua.includes('bingbot')) return 'Bingbot';
+  if (ua.includes('Slurp')) return 'Yahoo Slurp';
+  if (ua.includes('DuckDuckBot')) return 'DuckDuckBot';
+  if (ua.includes('Baiduspider')) return 'Baiduspider';
+  if (ua.includes('curl') || ua.includes('wget')) return 'curl/wget';
+  return ua.slice(0, 40);
+}
+
 let lastTracked = '';
 function track(path, title) {
   if (path === lastTracked) return; // evita contar a mesma página em sequência
   lastTracked = path;
-  try { sb.from('page_views').insert({ path, title, session_id: sessionId(), source: TRAFFIC_SOURCE }).then(() => {}, () => {}); } catch (e) {}
+  try { sb.from('page_views').insert({ path, title, session_id: sessionId(), source: TRAFFIC_SOURCE, user_agent: getUserAgent() }).then(() => {}, () => {}); } catch (e) {}
 }
 
 function toast(msg) {
