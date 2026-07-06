@@ -122,6 +122,8 @@ function track(path, title) {
   if (path === lastTracked) return; // evita contar a mesma página em sequência
   lastTracked = path;
   try { sb.from('page_views').insert({ path, title, session_id: sessionId(), source: TRAFFIC_SOURCE, user_agent: getUserAgent() }).then(() => {}, () => {}); } catch (e) {}
+  // Google Analytics (GA4) — page_view manual, pois o site é uma SPA
+  try { if (window.gtag) gtag('event', 'page_view', { page_title: title, page_path: '/' + path }); } catch (e) {}
 }
 
 function toast(msg) {
