@@ -162,6 +162,7 @@
           <button class="btn sm" data-vperiod="all">Tudo</button>
         </div>
         <span style="flex:1;"></span>
+        <label style="display:flex;align-items:center;gap:6px;margin:0;text-transform:none;letter-spacing:0;color:var(--text);font-size:13px;"><input id="vExcludeBots" type="checkbox" style="width:auto;"> 🚫 Excluir bots (afeta todos os números)</label>
         <div class="field" style="margin:0;"><label>De</label><input id="vFrom" type="date" style="width:auto;"></div>
         <div class="field" style="margin:0;"><label>Até</label><input id="vTo" type="date" style="width:auto;"></div>
         <button id="vApply" class="btn sm">Aplicar</button>
@@ -170,6 +171,9 @@
       <!-- RESUMO (visão atual) -->
       <div id="vSummaryView">
         <div id="visitsKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;"></div>
+
+        <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Funil de conversão</h3>
+        <div id="visitsFunnel" class="card" style="margin-bottom:18px;"></div>
 
         <h3 style="font-size:15px;margin-bottom:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;">Visitas por dia</h3>
         <div id="visitsChart" class="card"></div>
@@ -196,7 +200,7 @@
           <select id="vDetailSourceFilter" style="flex:0 0 auto;max-width:150px;">
             <option value="">🌐 Todas as origens</option>
           </select>
-          <label style="display:flex;align-items:center;gap:6px;margin:0;"><input id="vDetailExcludeBots" type="checkbox" style="width:auto;"> Excluir bots</label>
+          <span class="muted" style="font-size:12px;align-self:center;">Use "Excluir bots" no topo para filtrar robôs.</span>
         </div>
 
         <div id="vDetailTable" class="card" style="padding:0;overflow-x:auto;"></div>

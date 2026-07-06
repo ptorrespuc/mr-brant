@@ -126,6 +126,13 @@ function track(path, title) {
   try { if (window.gtag) gtag('event', 'page_view', { page_title: title, page_path: '/' + path }); } catch (e) {}
 }
 
+// registra um evento de conversão (ação, não navegação) — path 'event:<nome>'
+// não usa a deduplicação do track(): o mesmo evento pode ocorrer várias vezes.
+function trackEvent(name, title) {
+  try { sb.from('page_views').insert({ path: 'event:' + name, title: title || ('Evento: ' + name), session_id: sessionId(), source: TRAFFIC_SOURCE, user_agent: getUserAgent() }).then(() => {}, () => {}); } catch (e) {}
+  try { if (window.gtag) gtag('event', name); } catch (e) {}
+}
+
 function toast(msg) {
   const t = document.createElement('div');
   t.className = 'toast';
@@ -286,6 +293,7 @@ function addToCart() {
   if (i >= 0) state.cart[i].qty += state.qty;
   else state.cart.push({ prodId: p.id, sizeId: size.id, qty: state.qty });
   saveCart(); updateCartBadge(); toast('Adicionado à sacola');
+  trackEvent('add_to_cart', 'Adicionou à sacola');
 }
 function cartLineInfo(it) {
   const p = prodById(it.prodId);
@@ -986,6 +994,7 @@ async function checkoutPay(pay) {
     if (data.error) throw new Error(data.error);
 
     state.cart = []; saveCart(); updateCartBadge();
+    trackEvent(pay === 'whatsapp' ? 'checkout_whatsapp' : 'checkout_mp', pay === 'whatsapp' ? 'Finalizou pelo WhatsApp' : 'Finalizou pelo Mercado Pago');
 
     if (pay === 'whatsapp') {
       const link = `${siteBase()}?pedido=${data.token}`;

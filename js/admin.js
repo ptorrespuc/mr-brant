@@ -75,6 +75,8 @@ function hideAllViews() { ['listView', 'editView', 'settingsView', 'ordersView',
 
 // ---------- VISITAS (analytics) ----------
 let visitsPeriod = '30';
+let visitsExcludeBots = false; // toggle global: descontar bots de todos os números
+let visitsRange = null;        // período atual (para recarregar ao alternar o toggle)
 $('visitsBtn').onclick = openVisits;
 $('visitsBack').onclick = () => { hide($('visitsView')); show($('listView')); };
 $('vApply').onclick = () => {
@@ -82,6 +84,10 @@ $('vApply').onclick = () => {
   document.querySelectorAll('#vPeriodBtns [data-vperiod]').forEach((b) => b.classList.remove('gold'));
   const f = $('vFrom').value, t = $('vTo').value;
   loadVisits({ from: f ? new Date(f + 'T00:00:00').toISOString() : null, to: t ? new Date(t + 'T23:59:59').toISOString() : null });
+};
+$('vExcludeBots').onchange = () => {
+  visitsExcludeBots = $('vExcludeBots').checked;
+  loadVisits(visitsRange);
 };
 
 function openVisits() {
@@ -99,21 +105,38 @@ function openVisits() {
 }
 
 async function loadVisits(range) {
+  visitsRange = range;
+  $('vExcludeBots').checked = visitsExcludeBots;
   const kpis = $('visitsKpis'), list = $('visitsList'), chart = $('visitsChart'), sources = $('visitsSources');
   kpis.innerHTML = ''; chart.innerHTML = ''; sources.innerHTML = ''; list.innerHTML = '<p class="muted">Carregando…</p>';
 
-  // total exato (count) + amostra das últimas 1000 visitas para o ranking
-  let cq = sb.from('page_views').select('*', { count: 'exact', head: true });
+  // amostra das últimas 1000 visitas do período
   let rq = sb.from('page_views').select('path, title, session_id, source, user_agent, created_at').order('created_at', { ascending: false }).limit(1000);
-  if (range && range.from) { cq = cq.gte('created_at', range.from); rq = rq.gte('created_at', range.from); }
-  if (range && range.to) { cq = cq.lte('created_at', range.to); rq = rq.lte('created_at', range.to); }
+  if (range && range.from) rq = rq.gte('created_at', range.from);
+  if (range && range.to) rq = rq.lte('created_at', range.to);
 
-  const [{ count, error: cErr }, { data, error: rErr }] = await Promise.all([cq, rq]);
-  if (cErr || rErr) { list.innerHTML = `<p class="muted">Erro ao carregar. (Rodou o visitas.sql?)</p>`; return; }
+  const { data, error: rErr } = await rq;
+  if (rErr) { list.innerHTML = `<p class="muted">Erro ao carregar. (Rodou o visitas.sql?)</p>`; return; }
 
-  const rows = data || [];
-  const totalVisits = count || 0;
+  const allRows = data || [];
+  const capped = allRows.length >= 1000; // amostra pode não cobrir todo o período
+  // separa eventos de conversão (path 'event:*') das visitas de página
+  const eventRows = allRows.filter((r) => String(r.path || '').startsWith('event:'));
+  let rows = allRows.filter((r) => !String(r.path || '').startsWith('event:'));
+  let evRows = eventRows;
+  if (visitsExcludeBots) {
+    rows = rows.filter((r) => !isBot(r.user_agent));
+    evRows = evRows.filter((r) => !isBot(r.user_agent));
+  }
+  const botsHidden = visitsExcludeBots ? (allRows.filter((r) => !String(r.path || '').startsWith('event:')).length - rows.length) : allRows.filter((r) => !String(r.path || '').startsWith('event:') && isBot(r.user_agent)).length;
+
+  // guarda para a tabela detalhada e o funil
+  window.visitsData = { rows, evRows, range };
+
+  const totalVisits = rows.length;
   const uniqueSessions = new Set(rows.map((r) => r.session_id).filter(Boolean)).size;
+
+  renderFunnel(rows, evRows);
 
   // ranking por página
   const byPage = {};
@@ -132,8 +155,9 @@ async function loadVisits(range) {
       ${sub ? `<div class="muted" style="font-size:12px;margin-top:4px;">${sub}</div>` : ''}
     </div>`;
   kpis.innerHTML =
-    kpi('Visitas', totalVisits.toLocaleString('pt-BR'), 'páginas vistas no período') +
-    kpi('Visitantes únicos', uniqueSessions.toLocaleString('pt-BR'), totalVisits > 1000 ? 'baseado nas últimas 1000' : 'no período');
+    kpi('Visitas', totalVisits.toLocaleString('pt-BR'), (capped ? 'últimas 1000 · ' : '') + (visitsExcludeBots ? 'sem bots' : 'páginas vistas')) +
+    kpi('Visitantes únicos', uniqueSessions.toLocaleString('pt-BR'), 'pessoas diferentes' + (visitsExcludeBots ? ' (sem bots)' : '')) +
+    kpi(visitsExcludeBots ? 'Bots ocultados' : 'Visitas de bots', botsHidden.toLocaleString('pt-BR'), visitsExcludeBots ? 'removidos dos números' : 'incluídos — marque "Excluir bots"');
 
   // gráfico de visitas por dia
   const byDay = {};
@@ -165,9 +189,9 @@ async function loadVisits(range) {
       <div style="display:flex;justify-content:space-between;padding:10px 18px;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line);">
         <span>Página</span><span>Visitas · Únicos</span>
       </div>
-      ${pages.map((p) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);"><span>${p.title}</span><span style="color:var(--gold);white-space:nowrap;">${p.views} · ${p.uniques}</span></div>`).join('')}
+      ${pages.map((p) => `<div style="display:flex;justify-content:space-between;gap:12px;padding:11px 18px;border-bottom:1px solid var(--line);"><span>${esc(p.title)}</span><span style="color:var(--gold);white-space:nowrap;">${p.views} · ${p.uniques}</span></div>`).join('')}
     </div>
-    ${totalVisits > 1000 ? '<p class="muted" style="margin-top:10px;font-size:12px;">Ranking baseado nas últimas 1000 visitas do período.</p>' : ''}`;
+    ${capped ? '<p class="muted" style="margin-top:10px;font-size:12px;">Baseado nas últimas 1000 visitas do período.</p>' : ''}`;
 
   // Atualiza filtros na visão detalhada
   const uniquePages = [...new Set(rows.map(r => r.title || r.path))].sort();
@@ -175,11 +199,42 @@ async function loadVisits(range) {
   const pageFilter = $('vDetailPageFilter');
   const sourceFilter = $('vDetailSourceFilter');
 
+  const prevPage = pageFilter.value, prevSource = sourceFilter.value;
   pageFilter.innerHTML = '<option value="">📄 Todas as páginas</option>' + uniquePages.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
   sourceFilter.innerHTML = '<option value="">🌐 Todas as origens</option>' + uniqueSources.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+  pageFilter.value = prevPage; sourceFilter.value = prevSource;
 
-  // Armazena dados globais para filtros
-  window.visitsData = { rows, range };
+  // Armazena dados globais para filtros e re-renderiza a tabela se estiver visível
+  window.visitsData = { rows, evRows, range };
+  if (!$('vDetailView').classList.contains('hidden')) renderDetailedVisits();
+}
+
+// Funil de conversão: Visitantes → Viram produto → Adicionaram à sacola → Finalizaram pedido
+function renderFunnel(rows, evRows) {
+  const el = $('visitsFunnel');
+  const sess = (arr, pred) => new Set(arr.filter(pred).map((r) => r.session_id).filter(Boolean)).size;
+  const stages = [
+    { label: 'Visitantes', value: sess(rows, () => true), color: 'var(--gold)' },
+    { label: 'Viram um produto', value: sess(rows, (r) => String(r.path || '').startsWith('product:')), color: 'var(--gold)' },
+    { label: 'Adicionaram à sacola', value: sess(evRows, (r) => r.path === 'event:add_to_cart'), color: 'var(--green)' },
+    { label: 'Finalizaram pedido', value: sess(evRows, (r) => r.path === 'event:checkout_whatsapp' || r.path === 'event:checkout_mp'), color: 'var(--green)' },
+  ];
+  const top = stages[0].value || 1;
+  el.innerHTML = stages.map((s, i) => {
+    const pctTop = Math.round((s.value / top) * 100);
+    const prev = i > 0 ? stages[i - 1].value : null;
+    const pctPrev = (prev && prev > 0) ? Math.round((s.value / prev) * 100) : null;
+    const w = Math.max(2, pctTop);
+    return `<div style="margin-bottom:${i < stages.length - 1 ? 14 : 0}px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px;">
+        <span>${s.label}</span>
+        <span style="color:var(--muted);">${s.value.toLocaleString('pt-BR')}${pctPrev != null ? ` · ${pctPrev}% da etapa anterior` : ''}</span>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;height:26px;overflow:hidden;">
+        <div style="width:${w}%;height:100%;background:${s.color};border-radius:6px;display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:12px;color:#1a1206;font-weight:600;">${pctTop}%</div>
+      </div>
+    </div>`;
+  }).join('') + '<p class="muted" style="margin-top:12px;font-size:12px;">% em cada barra = proporção do topo (Visitantes). Contamos visitantes únicos por etapa.</p>';
 }
 
 function isBot(userAgent) {
@@ -189,16 +244,14 @@ function isBot(userAgent) {
 }
 
 function renderDetailedVisits() {
-  const rows = window.visitsData?.rows || [];
+  const rows = window.visitsData?.rows || []; // já sem bots quando o toggle global está ligado
   const pageFilter = $('vDetailPageFilter').value;
   const sourceFilter = $('vDetailSourceFilter').value;
-  const excludeBots = $('vDetailExcludeBots').checked;
 
   let filtered = rows.filter(r => {
     const page = r.title || r.path;
     if (pageFilter && page !== pageFilter) return false;
     if (sourceFilter && (r.source || 'desconhecido') !== sourceFilter) return false;
-    if (excludeBots && isBot(r.user_agent)) return false;
     return true;
   }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
@@ -255,7 +308,6 @@ $('vDetailBtn').onclick = () => {
 // Filtros na visão detalhada
 $('vDetailPageFilter').onchange = renderDetailedVisits;
 $('vDetailSourceFilter').onchange = renderDetailedVisits;
-$('vDetailExcludeBots').onchange = renderDetailedVisits;
 
 // ---------- CUPONS ----------
 $('couponsBtn').onclick = openCoupons;
