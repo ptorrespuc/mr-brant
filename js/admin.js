@@ -23,6 +23,10 @@ function toast(msg) {
   setTimeout(() => t.remove(), 2600);
 }
 
+function esc(s) {
+  return (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function publicUrl(path) {
   return sb.storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
 }
@@ -213,9 +217,10 @@ function renderDetailedVisits() {
 
   const rows_html = filtered.map(r => {
     const dt = new Date(r.created_at);
-    const botStatus = isBot(r.user_agent);
-    const statusColor = botStatus ? 'var(--red)' : 'var(--green)';
-    const statusLabel = botStatus ? '🤖 Bot' : '✓ Real';
+    let statusColor, statusLabel;
+    if (!r.user_agent) { statusColor = 'var(--muted)'; statusLabel = '— Sem dados'; }
+    else if (isBot(r.user_agent)) { statusColor = 'var(--red)'; statusLabel = '🤖 Bot'; }
+    else { statusColor = 'var(--green)'; statusLabel = '✓ Real'; }
     const ua = r.user_agent || 'desconhecido';
 
     return `<div style="display:flex;padding:10px 18px;border-bottom:1px solid var(--line);gap:12px;min-width:900px;font-size:11px;align-items:center;">
@@ -233,15 +238,15 @@ function renderDetailedVisits() {
 
 // Botões para alternar visão
 $('vSummaryBtn').onclick = () => {
-  $('vSummaryView').style.display = '';
-  $('vDetailView').style.display = 'none';
+  show($('vSummaryView'));
+  hide($('vDetailView'));
   $('vSummaryBtn').classList.add('gold');
   $('vDetailBtn').classList.remove('gold');
 };
 
 $('vDetailBtn').onclick = () => {
-  $('vSummaryView').style.display = 'none';
-  $('vDetailView').style.display = '';
+  hide($('vSummaryView'));
+  show($('vDetailView'));
   $('vDetailBtn').classList.add('gold');
   $('vSummaryBtn').classList.remove('gold');
   renderDetailedVisits();
