@@ -878,6 +878,7 @@ async function openEditor(p) {
   $('f_tagline').value = p?.tagline || '';
   $('f_note').value = p?.note || '';
   $('f_obs').value = p?.obs || '';
+  $('f_shopee').value = p?.shopee_url || '';
   $('f_active').checked = p ? p.active : true;
   if (p?.category_id) $('f_category').value = p.category_id;
   fillSubcategorySelect();
@@ -1074,6 +1075,10 @@ $('saveBtn').onclick = async () => {
       })
       .filter((s) => s.box_size_id);
 
+    const shopeeUrl = $('f_shopee').value.trim() || null;
+    if (shopeeUrl && !/^https:\/\/([a-z0-9-]+\.)*(shopee\.com\.br|shp\.ee)\//i.test(shopeeUrl)) {
+      throw new Error('O link da Shopee deve começar com https://shopee.com.br/ (ou https://shp.ee/).');
+    }
     const payload = {
       name, slug,
       tagline: $('f_tagline').value.trim(),
@@ -1081,6 +1086,7 @@ $('saveBtn').onclick = async () => {
       subcategory_id: $('f_subcategory').value || null,
       note: $('f_note').value.trim(),
       obs: $('f_obs').value.trim(),
+      shopee_url: shopeeUrl,
       descriptions, specs,
       active: $('f_active').checked,
       image_fit: $('f_fit').value,
