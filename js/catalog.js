@@ -629,7 +629,7 @@ function renderProduct() {
           </div>
           <button class="btn-out" id="addCart" style="width:100%;justify-content:center;margin-top:12px;">Adicionar à sacola</button>
           ${shopeeLink(p) ? `<a class="btn-shopee" id="buyShopee" href="${esc(shopeeLink(p))}" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 7.2a3.8 3.8 0 0 1 7.6 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M4.2 7.2h15.6l-1 12.6a1.6 1.6 0 0 1-1.6 1.5H6.8a1.6 1.6 0 0 1-1.6-1.5z" fill="#fff"/><text x="12" y="18.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="10" fill="#ee4d2d">S</text></svg>Compre pela Shopee<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="opacity:.85"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
-          <div class="muted" style="font-size:12px;margin-top:6px;text-align:center;">Você também pode comprar este produto pela nossa loja na Shopee.</div>` : ''}
+          <div class="muted" style="font-size:12px;line-height:1.5;margin-top:8px;text-align:center;">Esta imagem também está na nossa loja da Shopee. Lá o preço pode ser diferente do site, por causa das taxas da plataforma, que variam de imagem para imagem.</div>` : ''}
           ${p.obs ? `<div style="margin-top:14px;color:var(--muted);font-size:13px;font-style:italic;">${esc(p.obs)}</div>` : ''}
           ${freteBoxHtml('prod')}
         </div>
