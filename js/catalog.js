@@ -275,9 +275,12 @@ function openProduct(id) {
 const HOME_TITLE = 'Imagens de Umbanda pintadas à mão | Exus, Pombagiras e Orixás | Mr.Brant';
 let navFromHistory = false;
 function prodBySlug(slug) { return PRODUCTS.find((p) => p.slug === slug); }
+// "Pretos Velhos" → "pretos-velhos" (igual ao scripts/gerar-paginas.mjs)
+function subSlug(name) { return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 function urlForState() {
   if (state.screen === 'product') { const p = prodById(state.prodId); if (p) return '/imagem/' + encodeURIComponent(p.slug) + '/'; }
   if (state.screen === 'tracking' && state.trackToken) return '/?pedido=' + encodeURIComponent(state.trackToken);
+  if (state.screen === 'category' && state.catSlug === 'imagens') return '/imagens/' + (state.sub && state.sub !== 'Todas' ? subSlug(state.sub) + '/' : '');
   return '/';
 }
 function navKey(o) { return [o.screen, o.prodId, o.catSlug, o.sub, o.trackToken].join('|'); }
@@ -291,7 +294,10 @@ function syncUrl() {
     else history.pushState(snap, '', url);
   } catch (e) {}
   const p = state.screen === 'product' && prodById(state.prodId);
-  document.title = p ? `${p.name} | Mr.Brant` : HOME_TITLE;
+  const isCat = state.screen === 'category' && state.catSlug === 'imagens';
+  document.title = p ? `${p.name} | Mr.Brant`
+    : isCat ? (state.sub && state.sub !== 'Todas' ? `Imagens de ${state.sub} | Mr.Brant` : 'Imagens de Umbanda | Mr.Brant')
+    : HOME_TITLE;
 }
 // lê o endereço atual (/imagem/<slug>/ ou ?pedido=...) e escolhe a tela
 function routeFromLocation() {
@@ -301,6 +307,11 @@ function routeFromLocation() {
     const sizes = prodSizes(p);
     Object.assign(state, { screen: 'product', prodId: p.id, gIndex: 0, qty: 1, selSizeId: sizes[0] ? sizes[0].id : null });
     return;
+  }
+  const c = location.pathname.match(/^\/imagens\/(?:([^/]+)\/?)?$/);
+  if (c) {
+    const sObj = c[1] && imagensSubs().find((x) => subSlug(x.name) === decodeURIComponent(c[1]));
+    if (!c[1] || sObj) { Object.assign(state, { screen: 'category', catSlug: 'imagens', sub: sObj ? sObj.name : 'Todas' }); return; }
   }
   const pedido = new URLSearchParams(location.search).get('pedido');
   if (pedido) { state.trackToken = pedido; state.screen = 'tracking'; return; }

@@ -60,6 +60,21 @@ const cm = (label) => parseInt(String(label).replace(/\D/g, ''), 10) || null;
 const brl = (c) => 'R$ ' + (c / 100).toFixed(2).replace('.', ',');
 const fotoUrl = (path) => `${SB_URL}/storage/v1/object/public/${BUCKET}/${path.split('/').map(encodeURIComponent).join('/')}`;
 
+// "Pretos Velhos" → "pretos-velhos" (igual ao catalog.js: subSlug)
+const slugify = (s) => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// texto de abertura de cada página de categoria ({nomes} = exemplos do catálogo)
+const SUB_TEXTO = {
+  'Exus': 'Os Exus são os guardiões dos caminhos na Umbanda e na Quimbanda: protegem, abrem caminhos e fazem a ligação entre os mundos. Aqui você encontra imagens de {nomes}, entre outros.',
+  'Pombagiras': 'As Pombagiras trazem a força feminina, a proteção e a sabedoria das encruzilhadas da vida. Aqui você encontra imagens de {nomes}, entre outras.',
+  'Orixás': 'Os Orixás são as forças da natureza cultuadas na Umbanda e no Candomblé. Aqui você encontra imagens de {nomes}.',
+  'Caboclos': 'Os Caboclos trazem a força das matas, a cura e a sabedoria dos povos originários. Aqui você encontra imagens de {nomes}.',
+  'Pretos Velhos': 'Os Pretos Velhos são símbolo de humildade, paciência e sabedoria, sempre com uma palavra de conforto. Aqui você encontra imagens de {nomes}.',
+  'Crianças': 'As Crianças (Erês) trazem alegria, pureza e renovação para o terreiro e para o lar. Aqui você encontra imagens de {nomes}.',
+};
+const TEXTO_PADRAO = 'Imagens de {sub} para Umbanda: {nomes}.';
+const FECHO = 'Todas as peças são feitas em impressão 3D com preenchimento em gesso e pintadas à mão, e podem ser personalizadas nas cores do seu guia. Enviamos para todo o Brasil.';
+
 function linhaReligiosa(sub) {
   if (/exu|pombagira/i.test(sub || '')) return 'Umbanda e Quimbanda';
   if (/orix/i.test(sub || '')) return 'Umbanda e Candomblé';
@@ -81,6 +96,7 @@ for (const p of produtos) {
   p.min = precos.length ? Math.min(...precos) : null;
   p.max = precos.length ? Math.max(...precos) : null;
   p.url = `${SITE}/imagem/${p.slug}/`;
+  p.subSlug = p.sub ? slugify(p.sub) : '';
   p.titulo = `Imagem ${p.nome}${p.faixa ? ' ' + p.faixa : ''} | ${linhaReligiosa(p.sub)} | ${MARCA}`;
   const tag = semEmoji(p.tagline).trim();
   p.descricao = corta(`${tag ? tag.replace(/[.!]?$/, '. ') : ''}Imagem de ${p.nome} em impressão 3D com gesso, pintada à mão nas cores que você escolher${p.faixa ? `, de ${p.faixa}` : ''}. Envio para todo o Brasil.`, 160);
@@ -98,7 +114,7 @@ for (const p of produtos) { const k = p.sub || 'Outras'; if (!porSub.has(k)) por
 const listaCatalogo = `<!-- catalogo:start --><div class="seo-catalogo" style="max-width:1240px;margin:0 auto;padding:40px 28px 60px;color:var(--muted);">
 <p style="text-align:center;margin-bottom:28px;">Carregando catálogo…</p>
 <nav aria-label="Catálogo de imagens" style="font-size:14px;line-height:1.9;columns:220px;">
-${[...porSub].map(([sub, ps]) => `<div style="break-inside:avoid;margin-bottom:16px;"><h2 style="font-size:15px;color:var(--text);">Imagens de ${esc(sub)}</h2>${ps.map((p) => `<a href="/imagem/${p.slug}/" style="color:inherit;display:block;">${esc(p.nome)}</a>`).join('')}</div>`).join('\n')}
+${[...porSub].map(([sub, ps]) => `<div style="break-inside:avoid;margin-bottom:16px;"><h2 style="font-size:15px;"><a href="/imagens/${slugify(sub)}/" style="color:var(--text);">Imagens de ${esc(sub)}</a></h2>${ps.map((p) => `<a href="/imagem/${p.slug}/" style="color:inherit;display:block;">${esc(p.nome)}</a>`).join('')}</div>`).join('\n')}
 </nav></div><!-- catalogo:end -->`;
 index = index.replace(bloco('catalogo'), listaCatalogo);
 writeFileSync(INDEX, index);
@@ -134,7 +150,8 @@ function paginaProduto(p) {
     '@context': 'https://schema.org', '@type': 'BreadcrumbList',
     itemListElement: [
       { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE}/` },
-      { '@type': 'ListItem', position: 2, name: `Imagem ${p.nome}`, item: p.url },
+      ...(p.sub ? [{ '@type': 'ListItem', position: 2, name: `Imagens de ${p.sub}`, item: `${SITE}/imagens/${p.subSlug}/` }] : []),
+      { '@type': 'ListItem', position: p.sub ? 3 : 2, name: `Imagem ${p.nome}`, item: p.url },
     ],
   };
   const img = p.fotos[0] || `${SITE}/assets/logo-mb.png`;
@@ -159,7 +176,7 @@ ${p.min != null ? `<meta property="product:price:amount" content="${(p.min / 100
   const specs = (p.specs || []).filter((s) => s.k || s.v);
   const corpo = `
 <article class="seo-produto" style="max-width:1240px;margin:0 auto;padding:34px 28px 72px;">
-  <nav class="breadcrumb" aria-label="Você está em"><a href="/" style="color:inherit;">Início</a> / ${p.sub ? `${esc(p.sub)} / ` : ''}<span class="cur">${esc(p.nome)}</span></nav>
+  <nav class="breadcrumb" aria-label="Você está em"><a href="/" style="color:inherit;">Início</a> / ${p.sub ? `<a href="/imagens/${p.subSlug}/" style="color:inherit;">${esc(p.sub)}</a> / ` : ''}<span class="cur">${esc(p.nome)}</span></nav>
   <div class="prod-cols" style="display:grid;grid-template-columns:1.02fr 1fr;gap:48px;">
     <div>${p.fotos[0] ? `<img src="${esc(p.fotos[0])}" alt="Imagem ${esc(p.nome)} pintada à mão — ${esc(linhaReligiosa(p.sub))}" style="width:100%;aspect-ratio:4/5;object-fit:contain;background:#0d0a05;border-radius:18px;border:1px solid var(--line);">` : ''}</div>
     <div>
@@ -186,6 +203,67 @@ for (const p of produtos) {
   writeFileSync(join(PASTA, p.slug, 'index.html'), paginaProduto(p));
 }
 
+// ---------- páginas de categoria: /imagens/ e /imagens/<sub>/ ----------
+function paginaCategoria({ sub, slug, ps }) {
+  const url = `${SITE}/imagens/${slug ? slug + '/' : ''}`;
+  const nomes = ps.slice(0, 5).map((p) => p.nome);
+  const lista = nomes.length > 1 ? nomes.slice(0, -1).join(', ') + ' e ' + nomes[nomes.length - 1] : (nomes[0] || '');
+  const intro = sub
+    ? (SUB_TEXTO[sub] || TEXTO_PADRAO).replace('{nomes}', lista).replace('{sub}', sub) + ' ' + FECHO
+    : `Imagens de Exus, Pombagiras, Orixás, Caboclos e outras linhas da Umbanda. ${FECHO}`;
+  const h1 = sub ? `Imagens de ${sub}` : 'Imagens de Umbanda';
+  const titulo = sub ? `Imagens de ${sub} | ${linhaReligiosa(sub)} | Pintadas à mão | ${MARCA}` : `Imagens de Umbanda pintadas à mão | Todas as imagens | ${MARCA}`;
+  const descricao = corta(intro, 160);
+  const img = ps.find((p) => p.fotos[0])?.fotos[0] || `${SITE}/assets/logo-mb.png`;
+  const jsonld = [
+    {
+      '@context': 'https://schema.org', '@type': 'CollectionPage', name: h1, url, description: descricao,
+      mainEntity: { '@type': 'ItemList', numberOfItems: ps.length, itemListElement: ps.map((p, i) => ({ '@type': 'ListItem', position: i + 1, url: p.url, name: `Imagem ${p.nome}` })) },
+    },
+    {
+      '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE}/` },
+        ...(sub ? [{ '@type': 'ListItem', position: 2, name: 'Imagens', item: `${SITE}/imagens/` }] : []),
+        { '@type': 'ListItem', position: sub ? 3 : 2, name: h1, item: url },
+      ],
+    },
+  ];
+  const seo = `<!-- seo:start -->
+<title>${esc(titulo)}</title>
+<meta name="description" content="${esc(descricao)}">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${MARCA}">
+<meta property="og:locale" content="pt_BR">
+<meta property="og:title" content="${esc(`${h1} | ${MARCA}`)}">
+<meta property="og:description" content="${esc(descricao)}">
+<meta property="og:url" content="${url}">
+<meta property="og:image" content="${esc(img)}">
+<meta name="twitter:card" content="summary_large_image">
+${jsonld.map((j) => `<script type="application/ld+json">${JSON.stringify(j).replace(/</g, '\\u003c')}</script>`).join('\n')}
+<!-- seo:end -->`;
+  const outrasSubs = [...porSub.keys()].filter((s) => s !== sub);
+  const corpo = `
+<section class="seo-categoria" style="max-width:1240px;margin:0 auto;padding:34px 28px 72px;">
+  <nav class="breadcrumb" aria-label="Você está em"><a href="/" style="color:inherit;">Início</a> / ${sub ? `<a href="/imagens/" style="color:inherit;">Imagens</a> / ` : ''}<span class="cur">${esc(h1)}</span></nav>
+  <h1 style="font-size:34px;margin:14px 0 10px;">${esc(h1)}</h1>
+  <p style="color:var(--muted);max-width:760px;line-height:1.65;margin-bottom:26px;">${esc(intro)}</p>
+  <div class="grid4">${ps.map((p) => `<a class="card-prod" href="/imagem/${p.slug}/"><div class="ph" style="background-image:url('${esc(p.fotos[0] || '')}')"></div><div class="bd"><div class="nm">${esc(p.nome)}</div><div class="pr">${p.min != null ? (p.min === p.max ? brl(p.min) : 'a partir de ' + brl(p.min)) : 'Sob consulta'}</div><div class="sm">Pintura artesanal</div></div></a>`).join('')}</div>
+  ${outrasSubs.length ? `<p style="margin-top:30px;color:var(--muted);">Veja também: ${outrasSubs.map((s) => `<a href="/imagens/${slugify(s)}/" style="color:inherit;">Imagens de ${esc(s)}</a>`).join(' · ')}</p>` : ''}
+</section>`;
+  return comMain(comBase(index.replace(bloco('seo'), seo)), corpo);
+}
+
+const PASTA_CAT = join(ROOT, 'imagens');
+const categorias = [{ sub: '', slug: '', ps: produtos }, ...[...porSub].filter(([s]) => s !== 'Outras').map(([sub, ps]) => ({ sub, slug: slugify(sub), ps }))];
+rmSync(PASTA_CAT, { recursive: true, force: true });
+for (const c of categorias) {
+  const dir = c.slug ? join(PASTA_CAT, c.slug) : PASTA_CAT;
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, 'index.html'), paginaCategoria(c));
+}
+
 // ---------- 404 (abre o site; o catalog.js decide a tela pelo endereço) ----------
 const seo404 = `<!-- seo:start -->\n<title>Página não encontrada | ${MARCA}</title>\n<meta name="robots" content="noindex">\n<!-- seo:end -->`;
 writeFileSync(join(ROOT, '404.html'), comBase(index.replace(bloco('seo'), seo404)));
@@ -195,6 +273,10 @@ const dia = (d) => (d ? new Date(d).toISOString().slice(0, 10) : null);
 const ultima = produtos.map((p) => dia(p.updated_at)).filter(Boolean).sort().pop();
 const urls = [
   `  <url><loc>${SITE}/</loc>${ultima ? `<lastmod>${ultima}</lastmod>` : ''}</url>`,
+  ...categorias.map((c) => {
+    const lm = c.ps.map((p) => dia(p.updated_at)).filter(Boolean).sort().pop();
+    return `  <url><loc>${SITE}/imagens/${c.slug ? c.slug + '/' : ''}</loc>${lm ? `<lastmod>${lm}</lastmod>` : ''}</url>`;
+  }),
   ...produtos.map((p) => `  <url><loc>${p.url}</loc>${dia(p.updated_at) ? `<lastmod>${dia(p.updated_at)}</lastmod>` : ''}${p.fotos.slice(0, 3).map((f) => `<image:image><image:loc>${esc(f)}</image:loc></image:image>`).join('')}</url>`),
 ];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join('\n')}\n</urlset>\n`);
