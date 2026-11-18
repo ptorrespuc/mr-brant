@@ -23,6 +23,24 @@ function toast(msg) {
   setTimeout(() => t.remove(), 2600);
 }
 
+// Link da Shopee: guarda só o essencial. Um link de produto como
+// https://shopee.com.br/Nome-do-produto-i.<loja>.<item>?extraParams=...
+// vira https://shopee.com.br/product/<loja>/<item>.
+function normalizeShopeeUrl(raw) {
+  const v = (raw || '').trim();
+  if (!v) return null;
+  let u;
+  try { u = new URL(/^https?:\/\//i.test(v) ? v : 'https://' + v); } catch (e) { return v; }
+  const host = u.hostname.toLowerCase().replace(/^www\./, '');
+  if (host === 'shp.ee') return 'https://shp.ee' + u.pathname;
+  if (!/(^|\.)shopee\.com\.br$/.test(host)) return v;
+  let path = u.pathname;
+  try { path = decodeURIComponent(path); } catch (e) {}
+  const m = path.match(/-i\.(\d+)\.(\d+)\/?$/) || path.match(/^\/product\/(\d+)\/(\d+)/);
+  if (m) return `https://shopee.com.br/product/${m[1]}/${m[2]}`;
+  return 'https://shopee.com.br' + u.pathname; // outra página da Shopee: só tira os parâmetros
+}
+
 function esc(s) {
   return (s == null ? '' : String(s)).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
@@ -879,6 +897,7 @@ async function openEditor(p) {
   $('f_note').value = p?.note || '';
   $('f_obs').value = p?.obs || '';
   $('f_shopee').value = p?.shopee_url || '';
+  $('f_shopee').onchange = (e) => { e.target.value = normalizeShopeeUrl(e.target.value) || ''; };
   $('f_active').checked = p ? p.active : true;
   if (p?.category_id) $('f_category').value = p.category_id;
   fillSubcategorySelect();
@@ -1075,8 +1094,9 @@ $('saveBtn').onclick = async () => {
       })
       .filter((s) => s.box_size_id);
 
-    const shopeeUrl = $('f_shopee').value.trim() || null;
-    if (shopeeUrl && !/^https:\/\/([a-z0-9-]+\.)*(shopee\.com\.br|shp\.ee)\//i.test(shopeeUrl)) {
+    const shopeeUrl = normalizeShopeeUrl($('f_shopee').value);
+    $('f_shopee').value = shopeeUrl || '';
+    if (shopeeUrl && !/^https:\/\/(shopee\.com\.br|shp\.ee)\//i.test(shopeeUrl)) {
       throw new Error('O link da Shopee deve começar com https://shopee.com.br/ (ou https://shp.ee/).');
     }
     const payload = {
