@@ -82,7 +82,7 @@ function linhaReligiosa(sub) {
 }
 
 // ---------- dados ----------
-const produtos = (await rest('products?select=id,slug,name,tagline,note,obs,descriptions,specs,sort,updated_at,shopee_url,subcategories(name),product_images(path,sort),product_sizes(label,price_cents,sort)&active=eq.true&order=sort'))
+const produtos = (await rest('products?select=id,slug,name,tagline,note,obs,descriptions,specs,sort,updated_at,shopee_url,subcategories(name),product_images(path,sort),product_sizes(label,price_cents,weight_g,sort)&active=eq.true&order=sort'))
   .filter((p) => p.slug && /^[a-z0-9-]+$/.test(p.slug));
 
 for (const p of produtos) {
@@ -264,6 +264,100 @@ for (const c of categorias) {
   writeFileSync(join(dir, 'index.html'), paginaCategoria(c));
 }
 
+// ---------- páginas institucionais (conteúdo fixo; o catalog.js não substitui) ----------
+const settings = Object.fromEntries((await rest('settings?select=key,value&key=in.(whatsapp)')).map((r) => [r.key, r.value]));
+const waNum = String(settings.whatsapp || pick('WHATSAPP') || '').replace(/\D/g, '');
+const waHref = `https://wa.me/${waNum}?text=${encodeURIComponent('Olá! Quero solicitar uma troca/devolução. Pedido nº ')}`;
+const PAGINAS = [
+  {
+    path: 'trocas-e-devolucoes',
+    titulo: `Trocas e devoluções | ${MARCA}`,
+    descricao: 'Política de trocas e devoluções da Mr.Brant: 7 dias para arrependimento, troca ou reembolso de peças com defeito ou danificadas no transporte, com frete por nossa conta.',
+    h1: 'Trocas e devoluções',
+    corpo: `
+<p><em>Atualizada em 18 de novembro de 2026.</em></p>
+<h2>Arrependimento: 7 dias</h2>
+<p>Comprou pelo site e mudou de ideia? Você pode desistir da compra em até <strong>7 dias corridos a partir do recebimento</strong> da peça, como garante o Código de Defesa do Consumidor (art. 49). Devolvemos <strong>o valor integral pago, incluindo o frete</strong>, e o envio da devolução é por nossa conta: mandamos o código de postagem dos Correios.</p>
+<p>A peça deve voltar sem sinais de uso, de preferência na embalagem original.</p>
+<h2>Peça com defeito ou danificada no transporte</h2>
+<p>Se a peça chegar quebrada, danificada ou com defeito, avise em até <strong>7 dias do recebimento</strong>, com fotos da peça e da embalagem. Você escolhe: <strong>troca por uma peça nova</strong> ou <strong>reembolso integral</strong>, com todo o frete por nossa conta. Defeitos de fabricação podem ser reclamados em até 90 dias (art. 26 do CDC).</p>
+<h2>Peças personalizadas</h2>
+<p>As imagens pintadas nas cores escolhidas por você têm os mesmos direitos de arrependimento, troca e reembolso descritos acima.</p>
+<h2>Como solicitar</h2>
+<p>Fale com a gente pelo <a href="${waHref}" target="_blank" rel="noopener">WhatsApp</a> informando o número do pedido e o motivo. Respondemos de segunda a sábado, das 9h às 18h, e enviamos as instruções e o código de postagem.</p>
+<h2>Reembolso</h2>
+<p>O reembolso é feito pela mesma forma de pagamento: no cartão (Mercado Pago), o estorno aparece na fatura conforme o prazo da operadora; no Pix, devolvemos em até 5 dias úteis depois de recebermos a peça de volta (ou depois de confirmarmos o defeito pelas fotos).</p>`,
+  },
+];
+function paginaInstitucional(pg) {
+  const url = `${SITE}/${pg.path}/`;
+  const seo = `<!-- seo:start -->
+<title>${esc(pg.titulo)}</title>
+<meta name="description" content="${esc(pg.descricao)}">
+<link rel="canonical" href="${url}">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="${MARCA}">
+<meta property="og:title" content="${esc(pg.titulo)}">
+<meta property="og:description" content="${esc(pg.descricao)}">
+<meta property="og:url" content="${url}">
+<!-- seo:end -->`;
+  const corpo = `
+<article class="seo-pagina" data-pagina-fixa="${pg.path}" style="max-width:820px;margin:0 auto;padding:34px 28px 72px;line-height:1.7;">
+  <nav class="breadcrumb" aria-label="Você está em"><a href="/" style="color:inherit;">Início</a> / <span class="cur">${esc(pg.h1)}</span></nav>
+  <h1 style="font-size:34px;margin:14px 0 18px;">${esc(pg.h1)}</h1>
+  <div class="texto-pagina">${pg.corpo}</div>
+</article>`;
+  return comMain(comBase(index.replace(bloco('seo'), seo)), corpo);
+}
+for (const pg of PAGINAS) {
+  rmSync(join(ROOT, pg.path), { recursive: true, force: true });
+  mkdirSync(join(ROOT, pg.path), { recursive: true });
+  writeFileSync(join(ROOT, pg.path, 'index.html'), paginaInstitucional(pg));
+}
+
+// ---------- arquivo de produtos para o Google Merchant Center ----------
+// Um item por tamanho (variação), agrupados por produto (item_group_id).
+// O Merchant Center busca https://mrbrant.com.br/merchant/produtos.xml uma vez por dia.
+const slugTam = (label) => String(label).toLowerCase().replace(/[^a-z0-9]+/g, '');
+const textoPlano = (p) => corta(semEmoji([p.tagline, ...(p.descriptions || [])].filter(Boolean).join('\n')).replace(/^\s*[-*•]\s+/gm, '').replace(/[#*_`]+/g, '').replace(/\s*\n\s*/g, ' '), 4900)
+  || `Imagem de ${p.nome} em impressão 3D com gesso, pintada à mão.`;
+const itens = [];
+for (const p of produtos) {
+  if (!p.fotos.length) continue;
+  for (const s of p.tamanhos) {
+    const peso = s.weight_g || null;
+    itens.push(`  <item>
+    <g:id>${esc(`${p.slug}-${slugTam(s.label)}`)}</g:id>
+    <g:item_group_id>${esc(p.slug)}</g:item_group_id>
+    <title>${esc(corta(`Imagem ${p.nome} ${s.label} - Pintada à Mão - ${linhaReligiosa(p.sub)}`, 150))}</title>
+    <description>${esc(textoPlano(p))}</description>
+    <link>${esc(`${p.url}?tamanho=${slugTam(s.label)}`)}</link>
+    <g:image_link>${esc(p.fotos[0])}</g:image_link>
+${p.fotos.slice(1, 10).map((f) => `    <g:additional_image_link>${esc(f)}</g:additional_image_link>`).join('\n')}
+    <g:availability>in_stock</g:availability>
+    <g:price>${(s.price_cents / 100).toFixed(2)} BRL</g:price>
+    <g:condition>new</g:condition>
+    <g:brand>${MARCA}</g:brand>
+    <g:identifier_exists>no</g:identifier_exists>
+    <g:size>${esc(s.label)}</g:size>
+    <g:material>Gesso</g:material>
+    <g:product_type>${esc(`Imagens religiosas > ${p.sub || 'Imagens'}`)}</g:product_type>
+${peso ? `    <g:shipping_weight>${peso} g</g:shipping_weight>` : ''}
+  </item>`.replace(/\n\n/g, '\n'));
+  }
+}
+mkdirSync(join(ROOT, 'merchant'), { recursive: true });
+writeFileSync(join(ROOT, 'merchant', 'produtos.xml'), `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+<channel>
+  <title>${MARCA} — Imagens de Umbanda pintadas à mão</title>
+  <link>${SITE}/</link>
+  <description>Catálogo de produtos da ${MARCA}</description>
+${itens.join('\n')}
+</channel>
+</rss>
+`);
+
 // ---------- 404 (abre o site; o catalog.js decide a tela pelo endereço) ----------
 const seo404 = `<!-- seo:start -->\n<title>Página não encontrada | ${MARCA}</title>\n<meta name="robots" content="noindex">\n<!-- seo:end -->`;
 writeFileSync(join(ROOT, '404.html'), comBase(index.replace(bloco('seo'), seo404)));
@@ -277,9 +371,10 @@ const urls = [
     const lm = c.ps.map((p) => dia(p.updated_at)).filter(Boolean).sort().pop();
     return `  <url><loc>${SITE}/imagens/${c.slug ? c.slug + '/' : ''}</loc>${lm ? `<lastmod>${lm}</lastmod>` : ''}</url>`;
   }),
+  ...PAGINAS.map((pg) => `  <url><loc>${SITE}/${pg.path}/</loc></url>`),
   ...produtos.map((p) => `  <url><loc>${p.url}</loc>${dia(p.updated_at) ? `<lastmod>${dia(p.updated_at)}</lastmod>` : ''}${p.fotos.slice(0, 3).map((f) => `<image:image><image:loc>${esc(f)}</image:loc></image:image>`).join('')}</url>`),
 ];
 writeFileSync(join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${urls.join('\n')}\n</urlset>\n`);
 writeFileSync(join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nDisallow: /admin.html\nDisallow: /admin\nDisallow: /prototype.html\nDisallow: /Mr.Brant.dc.html\n\nSitemap: ${SITE}/sitemap.xml\n`);
 
-console.log(`${produtos.length} páginas de produto geradas; sitemap com ${urls.length} endereços.`);
+console.log(`${produtos.length} páginas de produto geradas; sitemap com ${urls.length} endereços; ${itens.length} itens no arquivo do Merchant Center.`);

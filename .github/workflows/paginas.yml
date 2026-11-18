@@ -32,7 +32,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          git add -A imagem imagens index.html 404.html sitemap.xml robots.txt
+          git add -A imagem imagens trocas-e-devolucoes merchant index.html 404.html sitemap.xml robots.txt
           if git diff --cached --quiet; then
             echo "Nada mudou."
             exit 0

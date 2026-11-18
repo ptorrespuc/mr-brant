@@ -278,6 +278,7 @@ function prodBySlug(slug) { return PRODUCTS.find((p) => p.slug === slug); }
 // "Pretos Velhos" → "pretos-velhos" (igual ao scripts/gerar-paginas.mjs)
 function subSlug(name) { return String(name).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
 function urlForState() {
+  if (state.screen === 'fixa') return location.pathname;
   if (state.screen === 'product') { const p = prodById(state.prodId); if (p) return '/imagem/' + encodeURIComponent(p.slug) + '/'; }
   if (state.screen === 'tracking' && state.trackToken) return '/?pedido=' + encodeURIComponent(state.trackToken);
   if (state.screen === 'category' && state.catSlug === 'imagens') return '/imagens/' + (state.sub && state.sub !== 'Todas' ? subSlug(state.sub) + '/' : '');
@@ -293,6 +294,7 @@ function syncUrl() {
     if (navFromHistory || !cur || same) history.replaceState(snap, '', url);
     else history.pushState(snap, '', url);
   } catch (e) {}
+  if (state.screen === 'fixa') return;
   const p = state.screen === 'product' && prodById(state.prodId);
   const isCat = state.screen === 'category' && state.catSlug === 'imagens';
   document.title = p ? `${p.name} | Mr.Brant`
@@ -301,11 +303,16 @@ function syncUrl() {
 }
 // lê o endereço atual (/imagem/<slug>/ ou ?pedido=...) e escolhe a tela
 function routeFromLocation() {
+  const fixa = document.querySelector('[data-pagina-fixa]');
+  if (fixa && location.pathname.replace(/\/$/, '') === '/' + fixa.dataset.paginaFixa) { state.screen = 'fixa'; return; }
   const m = location.pathname.match(/^\/imagem\/([^/]+)\/?$/);
   const p = m && prodBySlug(decodeURIComponent(m[1]));
   if (p) {
     const sizes = prodSizes(p);
-    Object.assign(state, { screen: 'product', prodId: p.id, gIndex: 0, qty: 1, selSizeId: sizes[0] ? sizes[0].id : null });
+    // ?tamanho=25cm (links do Google Shopping) já abre com o tamanho escolhido
+    const t = (new URLSearchParams(location.search).get('tamanho') || '').replace(/\D/g, '');
+    const sel = (t && sizes.find((s) => String(s.label).replace(/\D/g, '') === t)) || sizes[0];
+    Object.assign(state, { screen: 'product', prodId: p.id, gIndex: 0, qty: 1, selSizeId: sel ? sel.id : null });
     return;
   }
   const c = location.pathname.match(/^\/imagens\/(?:([^/]+)\/?)?$/);
@@ -319,6 +326,7 @@ function routeFromLocation() {
 }
 window.addEventListener('popstate', (e) => {
   if (!PRODUCTS.length) return;
+  if (e.state && e.state.screen === 'fixa') { location.reload(); return; }
   if (e.state && e.state.screen) {
     Object.assign(state, e.state, { gIndex: 0, qty: 1 });
     if (state.screen === 'product') { const p = prodById(state.prodId); const sizes = p ? prodSizes(p) : []; state.selSizeId = sizes[0] ? sizes[0].id : null; }
@@ -373,6 +381,7 @@ function cartSubtotal() {
 function render() {
   updateCartBadge();
   syncUrl();
+  if (state.screen === 'fixa') { track(location.pathname.replace(/^\/|\/$/g, ''), document.title); return; }
   if (state.screen === 'home') { track('home', 'Início'); return renderHome(); }
   if (state.screen === 'category') {
     const cat = catBySlug(state.catSlug);
