@@ -305,6 +305,7 @@ function paginaInstitucional(pg) {
 <article class="seo-pagina" data-pagina-fixa="${pg.path}" style="max-width:820px;margin:0 auto;padding:34px 28px 72px;line-height:1.7;">
   <nav class="breadcrumb" aria-label="Você está em"><a href="/" style="color:inherit;">Início</a> / <span class="cur">${esc(pg.h1)}</span></nav>
   <h1 style="font-size:34px;margin:14px 0 18px;">${esc(pg.h1)}</h1>
+  <style>.texto-pagina h2{font-size:21px;margin:30px 0 10px;}.texto-pagina p{margin:0 0 14px;color:var(--muted);}.texto-pagina strong{color:var(--text);}.texto-pagina a{color:var(--gold);}</style>
   <div class="texto-pagina">${pg.corpo}</div>
 </article>`;
   return comMain(comBase(index.replace(bloco('seo'), seo)), corpo);
