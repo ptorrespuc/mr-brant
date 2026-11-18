@@ -628,7 +628,7 @@ function renderProduct() {
             <button class="btn-gold" id="buyNow" style="flex:1;min-width:170px;">Comprar agora</button>
           </div>
           <button class="btn-out" id="addCart" style="width:100%;justify-content:center;margin-top:12px;">Adicionar à sacola</button>
-          ${shopeeLink(p) ? `<a class="btn-out" id="buyShopee" href="${esc(shopeeLink(p))}" target="_blank" rel="noopener" style="width:100%;justify-content:center;margin-top:12px;gap:8px;box-sizing:border-box;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 7h12l-1 13H7L6 7z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Comprar na Shopee</a>
+          ${shopeeLink(p) ? `<a class="btn-shopee" id="buyShopee" href="${esc(shopeeLink(p))}" target="_blank" rel="noopener"><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.2 7.2a3.8 3.8 0 0 1 7.6 0" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M4.2 7.2h15.6l-1 12.6a1.6 1.6 0 0 1-1.6 1.5H6.8a1.6 1.6 0 0 1-1.6-1.5z" fill="#fff"/><text x="12" y="18.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="10" fill="#ee4d2d">S</text></svg>Compre pela Shopee<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true" style="opacity:.85"><path d="M7 17L17 7M9 7h8v8"/></svg></a>
           <div class="muted" style="font-size:12px;margin-top:6px;text-align:center;">Você também pode comprar este produto pela nossa loja na Shopee.</div>` : ''}
           ${p.obs ? `<div style="margin-top:14px;color:var(--muted);font-size:13px;font-style:italic;">${esc(p.obs)}</div>` : ''}
           ${freteBoxHtml('prod')}
@@ -659,7 +659,7 @@ function renderProduct() {
   $('#decQty').onclick = () => { state.qty = Math.max(1, state.qty - 1); $('#qtyVal').textContent = state.qty; };
   $('#incQty').onclick = () => { state.qty += 1; $('#qtyVal').textContent = state.qty; };
   $('#addCart').onclick = addToCart;
-  if ($('#buyShopee')) $('#buyShopee').onclick = () => trackEvent('shopee_click', 'Clicou em Comprar na Shopee: ' + p.name);
+  if ($('#buyShopee')) $('#buyShopee').onclick = () => trackEvent('shopee_click', 'Clicou em Compre pela Shopee: ' + p.name);
   $('#buyNow').onclick = () => { addToCart(); go('checkout'); };
   $$('[data-size]').forEach((b) => b.onclick = () => { state.selSizeId = b.dataset.size; renderProduct(); });
   $$('[data-g]').forEach((b) => b.onclick = () => { state.gIndex = +b.dataset.g; renderProduct(); });
