@@ -51,7 +51,8 @@ function catBySlug(slug) { return CATEGORIES.find((c) => c.slug === slug); }
 function imagensSubs() { const cat = catBySlug('imagens'); return cat ? SUBCATEGORIES.filter((s) => s.category_id === cat.id) : []; }
 
 // URL base do site, incluindo subpasta (ex.: https://user.github.io/mr-brant/)
-function siteBase() { return location.origin + location.pathname.replace(/[^/]*$/, ''); }
+// o site fica na raiz do domínio; as páginas de produto (/imagem/<slug>/) não podem virar a base
+function siteBase() { return location.origin + '/'; }
 function waNumber() { return (SETTINGS.whatsapp || WHATSAPP || '').replace(/\D/g, ''); }
 function waLink(text) { return 'https://wa.me/' + waNumber() + (text ? '?text=' + encodeURIComponent(text) : ''); }
 
@@ -267,6 +268,55 @@ function openProduct(id) {
   go('product', { prodId: id, gIndex: 0, qty: 1, selSizeId: sizes[0] ? sizes[0].id : null });
 }
 
+// ---------- endereços (URLs) ----------
+// Cada produto tem endereço próprio: /imagem/<slug>/. O scripts/gerar-paginas.mjs gera
+// essas páginas já prontas para o Google; aqui o site só mantém a barra de endereço em
+// dia e responde ao botão Voltar. As outras telas ficam na raiz (/).
+const HOME_TITLE = 'Imagens de Umbanda pintadas à mão | Exus, Pombagiras e Orixás | Mr.Brant';
+let navFromHistory = false;
+function prodBySlug(slug) { return PRODUCTS.find((p) => p.slug === slug); }
+function urlForState() {
+  if (state.screen === 'product') { const p = prodById(state.prodId); if (p) return '/imagem/' + encodeURIComponent(p.slug) + '/'; }
+  if (state.screen === 'tracking' && state.trackToken) return '/?pedido=' + encodeURIComponent(state.trackToken);
+  return '/';
+}
+function navKey(o) { return [o.screen, o.prodId, o.catSlug, o.sub, o.trackToken].join('|'); }
+function syncUrl() {
+  const url = urlForState();
+  const snap = { screen: state.screen, prodId: state.prodId, catSlug: state.catSlug, sub: state.sub, query: state.query, trackToken: state.trackToken };
+  const cur = history.state;
+  const same = cur && navKey(cur) === navKey(snap);
+  try {
+    if (navFromHistory || !cur || same) history.replaceState(snap, '', url);
+    else history.pushState(snap, '', url);
+  } catch (e) {}
+  const p = state.screen === 'product' && prodById(state.prodId);
+  document.title = p ? `${p.name} | Mr.Brant` : HOME_TITLE;
+}
+// lê o endereço atual (/imagem/<slug>/ ou ?pedido=...) e escolhe a tela
+function routeFromLocation() {
+  const m = location.pathname.match(/^\/imagem\/([^/]+)\/?$/);
+  const p = m && prodBySlug(decodeURIComponent(m[1]));
+  if (p) {
+    const sizes = prodSizes(p);
+    Object.assign(state, { screen: 'product', prodId: p.id, gIndex: 0, qty: 1, selSizeId: sizes[0] ? sizes[0].id : null });
+    return;
+  }
+  const pedido = new URLSearchParams(location.search).get('pedido');
+  if (pedido) { state.trackToken = pedido; state.screen = 'tracking'; return; }
+  state.screen = 'home';
+}
+window.addEventListener('popstate', (e) => {
+  if (!PRODUCTS.length) return;
+  if (e.state && e.state.screen) {
+    Object.assign(state, e.state, { gIndex: 0, qty: 1 });
+    if (state.screen === 'product') { const p = prodById(state.prodId); const sizes = p ? prodSizes(p) : []; state.selSizeId = sizes[0] ? sizes[0].id : null; }
+  } else routeFromLocation();
+  navFromHistory = true;
+  try { closeMega(); render(); } finally { navFromHistory = false; }
+  window.scrollTo({ top: 0, behavior: 'auto' });
+});
+
 // ---------- cart ----------
 function cartCount() { return state.cart.reduce((n, it) => n + it.qty, 0); }
 function updateCartBadge() {
@@ -311,6 +361,7 @@ function cartSubtotal() {
 // ---------- render principal ----------
 function render() {
   updateCartBadge();
+  syncUrl();
   if (state.screen === 'home') { track('home', 'Início'); return renderHome(); }
   if (state.screen === 'category') {
     const cat = catBySlug(state.catSlug);
@@ -470,7 +521,7 @@ function renderSearch() {
 
 function cardProd(p) {
   return `
-    <div class="card-prod" data-prod="${p.id}">
+    <a class="card-prod" href="/imagem/${encodeURIComponent(p.slug)}/" data-prod="${p.id}">
       <div class="ph" style="${imgFitStyle(p)}background-image:url('${mainPhoto(p)}')">
         ${subName(p) ? `<div class="tag">${esc(subName(p))}</div>` : ''}
       </div>
@@ -479,7 +530,7 @@ function cardProd(p) {
         <div class="pr">${esc(priceLabel(p))}</div>
         <div class="sm">Pintura artesanal</div>
       </div>
-    </div>`;
+    </a>`;
 }
 
 // ---------- CATEGORY ----------
@@ -1097,7 +1148,11 @@ async function fetchAndShowOrder(body) {
 
 // ---------- binds genéricos ----------
 function bindCards() {
-  $$('[data-prod]').forEach((el) => el.onclick = () => openProduct(el.dataset.prod));
+  $$('[data-prod]').forEach((el) => el.onclick = (e) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return; // deixa abrir em nova aba
+    e.preventDefault();
+    openProduct(el.dataset.prod);
+  });
   $$('[data-nav]').forEach((el) => el.onclick = () => {
     const t = el.dataset.nav;
     if (t === 'home') go('home');
@@ -1177,9 +1232,7 @@ async function init() {
   applyFooterAbout();
   refreshWaLinks();
   updateCartBadge();
-  const params = new URLSearchParams(location.search);
-  const pedido = params.get('pedido');
-  if (pedido) { state.trackToken = pedido; state.screen = 'tracking'; }
+  routeFromLocation();
   render();
 }
 

@@ -1,0 +1,45 @@
+# Gera as páginas de produto para o Google (imagem/<slug>/), o sitemap e o robots.
+# Roda a cada push no main, a cada 3 horas (pega o que mudou no admin) e quando
+# você clicar em "Run workflow" na aba Actions do GitHub.
+name: Páginas para o Google
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 */3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+concurrency:
+  group: paginas-google
+  cancel-in-progress: false
+
+jobs:
+  gerar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Gerar páginas
+        run: node scripts/gerar-paginas.mjs
+      - name: Publicar se algo mudou
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git add -A imagem index.html 404.html sitemap.xml robots.txt
+          if git diff --cached --quiet; then
+            echo "Nada mudou."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Atualiza páginas dos produtos para o Google"
+          git push
+          # pushes feitos pelo GITHUB_TOKEN podem não disparar o GitHub Pages; pede o build
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true

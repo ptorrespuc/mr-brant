@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /admin
+Disallow: /prototype.html
+Disallow: /Mr.Brant.dc.html
+
+Sitemap: https://mrbrant.com.br/sitemap.xml
