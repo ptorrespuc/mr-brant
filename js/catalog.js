@@ -103,19 +103,18 @@ const TRAFFIC_SOURCE = (() => {
 function getUserAgent() {
   const ua = navigator.userAgent;
   if (!ua) return 'desconhecido';
-  // Tenta identificar navegador
-  if (ua.includes('Chrome')) return 'Chrome';
-  if (ua.includes('Safari')) return ua.includes('Mobile') ? 'Safari/Mobile' : 'Safari';
-  if (ua.includes('Firefox')) return 'Firefox';
-  if (ua.includes('Edge')) return 'Edge';
-  if (ua.includes('Edg/')) return 'Edge';
-  // Detecta bots
-  if (ua.includes('Googlebot')) return 'Googlebot';
-  if (ua.includes('bingbot')) return 'Bingbot';
-  if (ua.includes('Slurp')) return 'Yahoo Slurp';
-  if (ua.includes('DuckDuckBot')) return 'DuckDuckBot';
-  if (ua.includes('Baiduspider')) return 'Baiduspider';
-  if (ua.includes('curl') || ua.includes('wget')) return 'curl/wget';
+  // Robôs primeiro: o Googlebot e outros se identificam também como "Chrome".
+  // Tudo que for robô é gravado como "Bot: ..." (o admin filtra por "bot").
+  const bot = ua.match(/[\w.-]*(bot|crawl|spider|slurp|inspectiontool|lighthouse|headless|preview|externalhit)[\w.-]*/i);
+  if (bot) return 'Bot: ' + bot[0].slice(0, 40);
+  if (navigator.webdriver) return 'Bot: automação';
+  if (ua.includes('curl') || ua.includes('wget') || ua.includes('python')) return 'Bot: script';
+  // Navegadores (Edge e Opera antes do Chrome, que eles também citam)
+  if (ua.includes('Edg/') || ua.includes('Edge')) return 'Edge';
+  if (ua.includes('OPR/')) return 'Opera';
+  if (ua.includes('Chrome') || ua.includes('CriOS')) return 'Chrome';
+  if (ua.includes('Firefox') || ua.includes('FxiOS')) return 'Firefox';
+  if (ua.includes("Safari") || ua.includes("AppleWebKit")) return ua.includes("Mobile") ? "Safari/Mobile" : "Safari";
   return ua.slice(0, 40);
 }
 
